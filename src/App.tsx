@@ -1,19 +1,24 @@
 import { Canvas } from '@react-three/fiber'
 import { Suspense } from 'react'
 import Scene from './components/Scene'
+import HUD from './components/HUD'
 import './index.css'
 
 function App() {
   return (
-    <Canvas
-      camera={{ position: [0, 0, 50], fov: 75, near: 0.1, far: 10000 }}
-      gl={{ antialias: true, alpha: false }}
-    >
-      <color attach="background" args={['#050510']} />
-      <Suspense fallback={null}>
-        <Scene />
-      </Suspense>
-    </Canvas>
+    <>
+      <Canvas
+        camera={{ position: [0, 800, 4000], fov: 60, near: 0.1, far: 100000 }}
+        gl={{ antialias: true, alpha: false }}
+      >
+        <color attach="background" args={['#010103']} />
+        {/* Removed fog - it was causing the black circle effect */}
+        <Suspense fallback={null}>
+          <Scene />
+        </Suspense>
+      </Canvas>
+      <HUD />
+    </>
   )
 }
 
