@@ -234,8 +234,8 @@ export default function ShipControls({ config }: ShipControlsProps) {
     // --- MANUAL ROLL (A/D keys) ---
 
     let targetRollVelocity = 0
-    if (isRollingLeft) targetRollVelocity = cfg.rollRate
-    if (isRollingRight) targetRollVelocity = -cfg.rollRate
+    if (isRollingLeft) targetRollVelocity = -cfg.rollRate   // A = roll left (counter-clockwise)
+    if (isRollingRight) targetRollVelocity = cfg.rollRate   // D = roll right (clockwise)
 
     // Smooth roll
     currentRollVelocity.current += (targetRollVelocity - currentRollVelocity.current) * Math.min(6 * dt, 1)
