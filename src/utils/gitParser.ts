@@ -2,7 +2,7 @@
 // Note: This runs in browser, so we simulate git operations
 // In production, this would call a backend API or use isomorphic-git
 
-import type { FileNode, FolderNode, RepoNode, GitCommit, CommitFile, RepoInfo } from '../types'
+import type { FileNode, FolderNode, RepoNode, GitCommit, RepoInfo } from '../types'
 
 // Demo repository structure for testing
 // In production, this would be fetched from a git API
