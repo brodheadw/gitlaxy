@@ -1,4 +1,4 @@
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls, Stars } from '@react-three/drei'
 import { EffectComposer, Bloom, ChromaticAberration, Vignette, Noise } from '@react-three/postprocessing'
 import { BlendFunction } from 'postprocessing'
 import { Vector2 } from 'three'
@@ -23,7 +23,10 @@ export default function Scene() {
         color="#fff8e7"
       />
 
-      {/* Space backdrop with stars and nebulae - proper skybox */}
+      {/* Stars - uses points that render at infinity, no depth issues */}
+      <Stars radius={50000} depth={80} count={15000} factor={8} saturation={0.1} fade={false} />
+
+      {/* Volumetric nebulae in the scene */}
       <SpaceBackground />
 
       {/* Repository galaxy visualization */}
@@ -42,7 +45,7 @@ export default function Scene() {
           panSpeed={0.5}
           rotateSpeed={0.3}
           minDistance={50}
-          maxDistance={25000}
+          maxDistance={50000}
         />
       )}
 

@@ -1,5 +1,9 @@
 import { useStore } from '../store'
+import type { ShipType } from '../store'
+import { SHIP_INFO } from './Spaceship'
 import './HUD.css'
+
+const SHIP_TYPES: ShipType[] = ['falcon', 'viper', 'hauler', 'explorer']
 
 export default function HUD() {
   const {
@@ -19,6 +23,9 @@ export default function HUD() {
     viewLevel,
     currentSystem,
     exitSystem,
+    selectedShip,
+    setSelectedShip,
+    flightState,
   } = useStore()
 
   const currentCommit = commits[historyIndex]
@@ -88,19 +95,22 @@ export default function HUD() {
           <div className="controls-help">
             <div className="help-title">Ship Controls</div>
             <div className="help-row">
-              <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move
+              <kbd>Mouse</kbd> Pitch &amp; Yaw
             </div>
             <div className="help-row">
-              <kbd>Space</kbd> Up &nbsp; <kbd>Shift</kbd> Down
+              <kbd>W</kbd> Thrust &nbsp; <kbd>S</kbd> Brake
             </div>
             <div className="help-row">
-              <kbd>E</kbd> Boost &nbsp; <kbd>Q</kbd> Brake
+              <kbd>A</kbd><kbd>D</kbd> Barrel Roll
+            </div>
+            <div className="help-row">
+              <kbd>Shift</kbd> Boost
             </div>
             <div className="help-row">
               <kbd>ESC</kbd> Exit fly mode
             </div>
             <div className="help-row">
-              <span className="hint">Click to enable mouse look</span>
+              <span className="hint">Click to capture mouse</span>
             </div>
           </div>
         ) : (
@@ -160,6 +170,51 @@ export default function HUD() {
           </>
         )}
       </div>
+
+      {/* Speed indicator (when in fly mode) */}
+      {cameraMode === 'fly' && (
+        <div className="speed-indicator">
+          <div className="speed-bar-container">
+            <div
+              className={`speed-bar ${flightState.isBoosting ? 'boosting' : ''}`}
+              style={{ width: `${Math.min((flightState.speed / 1800) * 100, 100)}%` }}
+            />
+            <div className="speed-markers">
+              <span className="marker" style={{ left: '2.7%' }} title="Min (30)" />
+              <span className="marker" style={{ left: '27.8%' }} title="Max (500)" />
+              <span className="marker boost-marker" style={{ left: '100%' }} title="Boost (1800)" />
+            </div>
+          </div>
+          <div className="speed-value">
+            <span className="speed-number">{Math.round(flightState.speed)}</span>
+            <span className="speed-unit">u/s</span>
+            {flightState.isBoosting && <span className="boost-label">BOOST</span>}
+          </div>
+        </div>
+      )}
+
+      {/* Ship selector (when in fly mode) */}
+      {cameraMode === 'fly' && (
+        <div className="ship-selector">
+          <div className="ship-selector-title">Select Ship</div>
+          <div className="ship-options">
+            {SHIP_TYPES.map((shipType) => {
+              const info = SHIP_INFO[shipType]
+              return (
+                <button
+                  key={shipType}
+                  className={`ship-option ${selectedShip === shipType ? 'active' : ''}`}
+                  onClick={() => setSelectedShip(shipType)}
+                >
+                  <span className="ship-icon">{info.icon}</span>
+                  <span className="ship-name">{info.name}</span>
+                  <span className="ship-desc">{info.description}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* History timeline (when in history mode) */}
       {viewMode === 'history' && commits.length > 0 && (

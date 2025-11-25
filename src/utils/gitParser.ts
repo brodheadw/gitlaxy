@@ -32,6 +32,7 @@ export function createDemoRepo(): FolderNode {
     createFile('index.html', '/index.html', 500),
     createFile('README.md', '/README.md', 2000),
     createFile('.gitignore', '/.gitignore', 200),
+    createFile('package-lock.json', '/package-lock.json', 85000),
     createFolder('src', '/src', [
       createFile('main.tsx', '/src/main.tsx', 300),
       createFile('App.tsx', '/src/App.tsx', 800),
@@ -44,6 +45,9 @@ export function createDemoRepo(): FolderNode {
         createFile('FolderNode.tsx', '/src/components/FolderNode.tsx', 1600),
         createFile('HUD.tsx', '/src/components/HUD.tsx', 1200),
         createFile('ShipControls.tsx', '/src/components/ShipControls.tsx', 2500),
+        createFile('SpaceBackground.tsx', '/src/components/SpaceBackground.tsx', 4000),
+        createFile('SolarSystem.tsx', '/src/components/SolarSystem.tsx', 5000),
+        createFile('ProceduralPlanet.tsx', '/src/components/ProceduralPlanet.tsx', 6000),
       ]),
       createFolder('hooks', '/src/hooks', [
         createFile('useKeyboardControls.ts', '/src/hooks/useKeyboardControls.ts', 1000),
@@ -62,6 +66,35 @@ export function createDemoRepo(): FolderNode {
     ]),
     createFolder('public', '/public', [
       createFile('favicon.ico', '/public/favicon.ico', 100),
+      createFile('robots.txt', '/public/robots.txt', 50),
+    ]),
+    createFolder('node_modules', '/node_modules', [
+      createFolder('react', '/node_modules/react', [
+        createFile('index.js', '/node_modules/react/index.js', 15000),
+        createFile('package.json', '/node_modules/react/package.json', 800),
+      ]),
+      createFolder('three', '/node_modules/three', [
+        createFile('three.module.js', '/node_modules/three/three.module.js', 120000),
+        createFile('package.json', '/node_modules/three/package.json', 600),
+      ]),
+      createFolder('@react-three', '/node_modules/@react-three', [
+        createFolder('fiber', '/node_modules/@react-three/fiber', [
+          createFile('index.js', '/node_modules/@react-three/fiber/index.js', 25000),
+        ]),
+        createFolder('drei', '/node_modules/@react-three/drei', [
+          createFile('index.js', '/node_modules/@react-three/drei/index.js', 45000),
+        ]),
+      ]),
+      createFolder('zustand', '/node_modules/zustand', [
+        createFile('index.js', '/node_modules/zustand/index.js', 8000),
+      ]),
+    ]),
+    createFolder('dist', '/dist', [
+      createFile('index.html', '/dist/index.html', 500),
+      createFolder('assets', '/dist/assets', [
+        createFile('index.js', '/dist/assets/index.js', 350000),
+        createFile('index.css', '/dist/assets/index.css', 8000),
+      ]),
     ]),
   ])
 }

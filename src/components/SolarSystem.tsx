@@ -3,37 +3,96 @@ import { useFrame } from '@react-three/fiber'
 import { Html, Sphere } from '@react-three/drei'
 import * as THREE from 'three'
 import type { FolderNode, FileNode } from '../types'
-import { getColorForFolder, getColorForExtension } from '../types'
+import { getColorForExtension } from '../types'
 import { useStore } from '../store'
 import ProceduralPlanet from './ProceduralPlanet'
 
 interface SolarSystemProps {
   folder: FolderNode
   position: [number, number, number]
-  isCurrentSystem?: boolean
+  depth: number // How deep in the folder hierarchy (0 = top level)
+  totalChildren: number // Total descendants for sizing
 }
 
-// Sun (folder) component
-function Sun({ folder, onClick, isHovered, setIsHovered }: {
+// Get star color and properties based on depth and size
+function getStarProperties(depth: number, childCount: number, totalDescendants: number) {
+  // Top-level folders with many children = Blue Supergiants
+  // Mid-level folders = Main sequence (yellow/orange)
+  // Deep/small folders = Red dwarfs
+
+  if (depth === 0 && totalDescendants > 10) {
+    // Blue Supergiant - large top-level folders
+    return {
+      color: new THREE.Color('#8bb4ff'),
+      coronaColor: new THREE.Color('#aaccff'),
+      size: 120 + Math.min(totalDescendants * 2, 100),
+      intensity: 4,
+    }
+  } else if (depth === 0) {
+    // Blue-white main sequence - smaller top-level
+    return {
+      color: new THREE.Color('#b4c7ff'),
+      coronaColor: new THREE.Color('#ccdeff'),
+      size: 80 + Math.min(childCount * 5, 60),
+      intensity: 3,
+    }
+  } else if (depth === 1 && childCount > 5) {
+    // Yellow giant - large nested folders
+    return {
+      color: new THREE.Color('#fff4e0'),
+      coronaColor: new THREE.Color('#ffeecc'),
+      size: 60 + Math.min(childCount * 4, 50),
+      intensity: 2.5,
+    }
+  } else if (depth === 1) {
+    // Yellow main sequence
+    return {
+      color: new THREE.Color('#ffee88'),
+      coronaColor: new THREE.Color('#ffdd66'),
+      size: 45 + Math.min(childCount * 3, 35),
+      intensity: 2,
+    }
+  } else if (depth === 2) {
+    // Orange dwarf
+    return {
+      color: new THREE.Color('#ffaa55'),
+      coronaColor: new THREE.Color('#ff9944'),
+      size: 35 + Math.min(childCount * 2, 25),
+      intensity: 1.5,
+    }
+  } else {
+    // Red dwarf - deep nested folders
+    return {
+      color: new THREE.Color('#ff6644'),
+      coronaColor: new THREE.Color('#ff5533'),
+      size: 25 + Math.min(childCount * 1.5, 15),
+      intensity: 1,
+    }
+  }
+}
+
+// Sun (folder) component - no click to enter, just displays
+function Sun({ folder, depth, totalChildren }: {
   folder: FolderNode
-  onClick: () => void
-  isHovered: boolean
-  setIsHovered: (h: boolean) => void
+  depth: number
+  totalChildren: number
 }) {
   const sunRef = useRef<THREE.Group>(null)
   const coronaRef = useRef<THREE.Mesh>(null)
-  const color = new THREE.Color(getColorForFolder(folder.name))
+  const [isHovered, setIsHovered] = useState(false)
+  const { selectNode, hoverNode } = useStore()
 
-  // Sun size based on number of children - made bigger
-  const isRoot = folder.path === '/'
-  const baseSize = isRoot ? 150 : 80 + Math.min(folder.children.length * 5, 70)
+  const starProps = useMemo(
+    () => getStarProperties(depth, folder.children.length, totalChildren),
+    [depth, folder.children.length, totalChildren]
+  )
 
   useFrame((state) => {
     if (!sunRef.current) return
     const time = state.clock.elapsedTime
 
     // Slow rotation
-    sunRef.current.rotation.y += 0.001
+    sunRef.current.rotation.y += 0.0005
 
     // Animate corona
     if (coronaRef.current) {
@@ -42,95 +101,103 @@ function Sun({ folder, onClick, isHovered, setIsHovered }: {
   })
 
   return (
-    <group
-      ref={sunRef}
-      onClick={(e) => {
-        e.stopPropagation()
-        onClick()
-      }}
-      onPointerOver={(e) => {
-        e.stopPropagation()
-        setIsHovered(true)
-        document.body.style.cursor = 'pointer'
-      }}
-      onPointerOut={() => {
-        setIsHovered(false)
-        document.body.style.cursor = 'default'
-      }}
-    >
+    <group ref={sunRef}>
+      {/* Interaction mesh */}
+      <mesh
+        onClick={(e) => {
+          e.stopPropagation()
+          selectNode(folder)
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation()
+          setIsHovered(true)
+          hoverNode(folder)
+          document.body.style.cursor = 'pointer'
+        }}
+        onPointerOut={() => {
+          setIsHovered(false)
+          hoverNode(null)
+          document.body.style.cursor = 'default'
+        }}
+      >
+        <sphereGeometry args={[starProps.size * 1.3, 16, 16]} />
+        <meshBasicMaterial transparent opacity={0} />
+      </mesh>
+
       {/* Core sun sphere */}
-      <Sphere args={[baseSize, 64, 64]}>
-        <meshBasicMaterial color={color} />
+      <Sphere args={[starProps.size, 64, 64]}>
+        <meshBasicMaterial color={starProps.color} />
       </Sphere>
 
       {/* Inner corona glow */}
-      <Sphere args={[baseSize * 1.1, 32, 32]}>
+      <Sphere args={[starProps.size * 1.1, 32, 32]}>
         <meshBasicMaterial
-          color={color}
+          color={starProps.coronaColor}
           transparent
           opacity={0.4}
           side={THREE.BackSide}
+          depthWrite={false}
         />
       </Sphere>
 
       {/* Outer corona */}
-      <Sphere ref={coronaRef} args={[baseSize * 1.3, 32, 32]}>
+      <Sphere ref={coronaRef} args={[starProps.size * 1.3, 32, 32]}>
         <meshBasicMaterial
-          color={color}
+          color={starProps.coronaColor}
           transparent
           opacity={0.15}
           side={THREE.BackSide}
+          depthWrite={false}
         />
       </Sphere>
 
       {/* Distant glow */}
-      <Sphere args={[baseSize * 2, 32, 32]}>
+      <Sphere args={[starProps.size * 2, 32, 32]}>
         <meshBasicMaterial
-          color={color}
+          color={starProps.color}
           transparent
           opacity={0.05}
           side={THREE.BackSide}
+          depthWrite={false}
         />
       </Sphere>
 
       {/* Sun light */}
-      <pointLight color={color} intensity={3} distance={baseSize * 30} decay={2} />
+      <pointLight
+        color={starProps.color}
+        intensity={starProps.intensity}
+        distance={starProps.size * 25}
+        decay={2}
+      />
 
       {/* Label */}
       <Html
-        position={[0, baseSize + 20, 0]}
+        position={[0, starProps.size * 1.5, 0]}
         center
         distanceFactor={200}
         style={{ pointerEvents: 'none' }}
       >
         <div
           style={{
-            background: isHovered ? 'rgba(0, 0, 0, 0.9)' : 'rgba(0, 0, 0, 0.6)',
-            color: `#${color.getHexString()}`,
-            padding: isHovered ? '12px 20px' : '8px 14px',
-            borderRadius: '8px',
-            fontSize: isHovered ? '16px' : '14px',
+            background: isHovered ? 'rgba(0, 0, 0, 0.9)' : 'rgba(0, 0, 0, 0.5)',
+            color: `#${starProps.color.getHexString()}`,
+            padding: '4px 10px',
+            borderRadius: '4px',
+            fontSize: '13px',
             fontFamily: 'monospace',
-            fontWeight: 'bold',
-            border: `2px solid #${color.getHexString()}`,
-            boxShadow: `0 0 20px #${color.getHexString()}60`,
-            textShadow: `0 0 10px #${color.getHexString()}`,
             whiteSpace: 'nowrap',
+            border: `1px solid #${starProps.color.getHexString()}44`,
+            textShadow: `0 0 10px #${starProps.color.getHexString()}`,
           }}
         >
-          ☀️ {folder.name}
-          {isHovered && (
-            <div style={{ fontSize: '11px', opacity: 0.7, marginTop: '4px', fontWeight: 'normal' }}>
-              {folder.children.length} items • Click to enter
-            </div>
-          )}
+          {folder.name}/
         </div>
       </Html>
     </group>
   )
 }
 
-// Planet (file) component - orbits around the sun with procedural surface
+// Planet (file) component - orbits around the sun
 function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
   file: FileNode
   orbitRadius: number
@@ -144,8 +211,8 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
   const color = useMemo(() => new THREE.Color(getColorForExtension(file.extension)), [file.extension])
   const isSelected = selectedNode?.id === file.id
 
-  // Planet size based on file size - make them much larger
-  const baseSize = 25 + Math.log10(Math.max(file.size, 100)) * 10
+  // Planet size based on file size
+  const baseSize = 15 + Math.log10(Math.max(file.size, 100)) * 8
 
   useFrame((state) => {
     if (!planetRef.current) return
@@ -155,12 +222,12 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
     const angle = startAngle + time * orbitSpeed
     planetRef.current.position.x = Math.cos(angle) * orbitRadius
     planetRef.current.position.z = Math.sin(angle) * orbitRadius
-    planetRef.current.position.y = Math.sin(angle * 0.5) * orbitRadius * 0.08 // Slight orbital tilt
+    planetRef.current.position.y = Math.sin(angle * 0.5) * orbitRadius * 0.05
   })
 
   return (
     <group ref={planetRef}>
-      {/* Interaction mesh (invisible, larger for easier clicking) */}
+      {/* Interaction mesh */}
       <mesh
         onClick={(e) => {
           e.stopPropagation()
@@ -182,7 +249,7 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
 
-      {/* Beautiful procedural planet with shaders */}
+      {/* Procedural planet */}
       <ProceduralPlanet
         size={baseSize}
         color={color}
@@ -190,10 +257,10 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
         rotationSpeed={0.005}
       />
 
-      {/* Selection indicator - glowing ring */}
+      {/* Selection indicator */}
       {(isSelected || hovered) && (
         <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[baseSize * 2.5, baseSize * 2.8, 64]} />
+          <ringGeometry args={[baseSize * 2, baseSize * 2.3, 64]} />
           <meshBasicMaterial
             color={color}
             transparent
@@ -204,111 +271,103 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
         </mesh>
       )}
 
-      {/* Label */}
-      <Html
-        position={[0, baseSize * 1.5 + 10, 0]}
-        center
-        distanceFactor={150}
-        style={{ pointerEvents: 'none' }}
-      >
-        <div
-          style={{
-            background: hovered ? 'rgba(0, 0, 0, 0.9)' : 'rgba(0, 0, 0, 0.5)',
-            color: `#${color.getHexString()}`,
-            padding: hovered ? '8px 14px' : '4px 10px',
-            borderRadius: '6px',
-            fontSize: hovered ? '13px' : '11px',
-            fontFamily: 'monospace',
-            border: `1px solid #${color.getHexString()}80`,
-            textShadow: `0 0 8px #${color.getHexString()}`,
-            whiteSpace: 'nowrap',
-          }}
+      {/* Label - only show on hover */}
+      {hovered && (
+        <Html
+          position={[0, baseSize * 1.5 + 5, 0]}
+          center
+          distanceFactor={120}
+          style={{ pointerEvents: 'none' }}
         >
-          {file.name}
-          {hovered && (
-            <div style={{ fontSize: '10px', opacity: 0.6, marginTop: '2px' }}>
-              {(file.size / 1000).toFixed(1)} KB
-            </div>
-          )}
-        </div>
-      </Html>
+          <div
+            style={{
+              background: 'rgba(0, 0, 0, 0.85)',
+              color: `#${color.getHexString()}`,
+              padding: '3px 8px',
+              borderRadius: '3px',
+              fontSize: '11px',
+              fontFamily: 'monospace',
+              whiteSpace: 'nowrap',
+              border: `1px solid #${color.getHexString()}44`,
+            }}
+          >
+            {file.name}
+          </div>
+        </Html>
+      )}
     </group>
   )
 }
 
 // Orbit ring visualization
-function OrbitRing({ radius, color }: { radius: number; color: string }) {
+function OrbitRing({ radius, color }: { radius: number; color: THREE.Color }) {
   return (
     <mesh rotation={[Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[radius - 1, radius + 1, 128]} />
+      <ringGeometry args={[radius - 0.5, radius + 0.5, 128]} />
       <meshBasicMaterial
         color={color}
         transparent
-        opacity={0.1}
+        opacity={0.08}
         side={THREE.DoubleSide}
+        depthWrite={false}
       />
     </mesh>
   )
 }
 
-export default function SolarSystem({ folder, position, isCurrentSystem = false }: SolarSystemProps) {
-  const [isHovered, setIsHovered] = useState(false)
-  const { enterSystem, viewLevel } = useStore()
+// Count total descendants
+function countDescendants(folder: FolderNode): number {
+  let count = folder.children.length
+  for (const child of folder.children) {
+    if (child.type === 'folder') {
+      count += countDescendants(child)
+    }
+  }
+  return count
+}
 
-  const color = getColorForFolder(folder.name)
+export default function SolarSystem({ folder, position, depth, totalChildren }: SolarSystemProps) {
+  const starProps = useMemo(
+    () => getStarProperties(depth, folder.children.length, totalChildren),
+    [depth, folder.children.length, totalChildren]
+  )
 
-  // Calculate orbit parameters for children
+  // Calculate orbit parameters for file children only
   const orbits = useMemo(() => {
     const files = folder.children.filter((c): c is FileNode => c.type === 'file')
-    const sunSize = folder.path === '/' ? 150 : 80 + Math.min(folder.children.length * 5, 70)
+    const sunSize = starProps.size
 
     return files.map((file, index) => {
-      // Much more spread out orbits for that vast space feeling
-      const orbitRadius = sunSize * 3 + (index + 1) * 180 // More spacing between orbits
-      const orbitSpeed = 0.03 / (index + 1) // Slower, more majestic orbits
-      const startAngle = (index / files.length) * Math.PI * 2 + (index * 0.5) // Distribute with some variance
+      const orbitRadius = sunSize * 2.5 + (index + 1) * 100
+      const orbitSpeed = 0.02 / (index + 1)
+      const startAngle = (index / Math.max(files.length, 1)) * Math.PI * 2 + (index * 0.3)
 
       return { file, orbitRadius, orbitSpeed, startAngle }
     })
-  }, [folder])
-
-  const handleSunClick = () => {
-    if (viewLevel === 'galaxy') {
-      // Travel to this solar system
-      enterSystem(folder)
-    }
-  }
+  }, [folder.children, starProps.size])
 
   return (
     <group position={position}>
-      {/* The Sun (folder) */}
-      <Sun
-        folder={folder}
-        onClick={handleSunClick}
-        isHovered={isHovered}
-        setIsHovered={setIsHovered}
-      />
+      {/* The sun (folder) */}
+      <Sun folder={folder} depth={depth} totalChildren={totalChildren} />
 
-      {/* Only show planets when viewing this system or when it's current */}
-      {(isCurrentSystem || viewLevel === 'system') && (
-        <>
-          {/* Orbit rings */}
-          {orbits.map(({ orbitRadius }, i) => (
-            <OrbitRing key={`orbit-${i}`} radius={orbitRadius} color={color} />
-          ))}
+      {/* Orbit rings */}
+      {orbits.map(({ orbitRadius }, i) => (
+        <OrbitRing key={`orbit-${i}`} radius={orbitRadius} color={starProps.color} />
+      ))}
 
-          {/* Planets (files) */}
-          {orbits.map(({ file, orbitRadius, orbitSpeed, startAngle }) => (
-            <Planet
-              key={file.id}
-              file={file}
-              orbitRadius={orbitRadius}
-              orbitSpeed={orbitSpeed}
-              startAngle={startAngle}
-            />
-          ))}
-        </>
-      )}
+      {/* Planets (files) */}
+      {orbits.map(({ file, orbitRadius, orbitSpeed, startAngle }) => (
+        <Planet
+          key={file.id}
+          file={file}
+          orbitRadius={orbitRadius}
+          orbitSpeed={orbitSpeed}
+          startAngle={startAngle}
+        />
+      ))}
     </group>
   )
 }
+
+export { countDescendants }

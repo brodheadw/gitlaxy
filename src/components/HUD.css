@@ -420,3 +420,171 @@ kbd {
 .view-indicator .separator {
   color: #444;
 }
+
+/* Ship selector */
+.ship-selector {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 12px 16px;
+  backdrop-filter: blur(10px);
+}
+
+.ship-selector-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: #4ecdc4;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.ship-options {
+  display: flex;
+  gap: 8px;
+}
+
+.ship-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+.ship-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(78, 205, 196, 0.3);
+  transform: translateY(-2px);
+}
+
+.ship-option.active {
+  background: rgba(78, 205, 196, 0.15);
+  border-color: rgba(78, 205, 196, 0.6);
+  box-shadow: 0 0 15px rgba(78, 205, 196, 0.2);
+}
+
+.ship-icon {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.ship-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.ship-desc {
+  font-size: 9px;
+  color: #666;
+}
+
+/* Speed indicator */
+.speed-indicator {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.speed-bar-container {
+  width: 200px;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.speed-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #4ecdc4, #44a08d);
+  border-radius: 3px;
+  transition: width 0.1s ease-out;
+}
+
+.speed-bar.boosting {
+  background: linear-gradient(90deg, #ff6b6b, #ffa502, #ff6b6b);
+  background-size: 200% 100%;
+  animation: boostPulse 0.3s ease-in-out infinite;
+}
+
+@keyframes boostPulse {
+  0%, 100% { background-position: 0% 0%; }
+  50% { background-position: 100% 0%; }
+}
+
+.speed-markers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.speed-markers .marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateX(-50%);
+}
+
+.speed-markers .boost-marker {
+  background: rgba(255, 107, 107, 0.5);
+}
+
+.speed-value {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.speed-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: #4ecdc4;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  text-shadow: 0 0 10px rgba(78, 205, 196, 0.3);
+}
+
+.speed-unit {
+  font-size: 11px;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.boost-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.2);
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: 8px;
+  animation: boostBlink 0.5s ease-in-out infinite;
+}
+
+@keyframes boostBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}

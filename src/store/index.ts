@@ -5,6 +5,7 @@ import { createDemoRepo, createDemoCommits, getRepoInfo } from '../utils/gitPars
 export type ViewMode = 'explore' | 'history'
 export type CameraMode = 'orbit' | 'fly'
 export type ViewLevel = 'galaxy' | 'system' // galaxy = all systems, system = inside one folder
+export type ShipType = 'falcon' | 'viper' | 'hauler' | 'explorer'
 
 interface CameraState {
   position: { x: number; y: number; z: number }
@@ -39,6 +40,19 @@ interface RepoState {
   // Controls state
   keysPressed: Set<string>
 
+  // Ship selection
+  selectedShip: ShipType
+
+  // Flight state (shared between ShipControls and Spaceship for visual sync)
+  flightState: {
+    speed: number
+    isBoosting: boolean
+    yawVelocity: number
+    pitchVelocity: number
+    rollVelocity: number
+    autoBankAngle: number
+  }
+
   // Actions
   loadRepo: () => void
   setViewMode: (mode: ViewMode) => void
@@ -67,6 +81,12 @@ interface RepoState {
 
   // Controls actions
   setKeyPressed: (key: string, pressed: boolean) => void
+
+  // Ship actions
+  setSelectedShip: (ship: ShipType) => void
+
+  // Flight state actions
+  updateFlightState: (state: Partial<RepoState['flightState']>) => void
 }
 
 export const useStore = create<RepoState>((set, get) => ({
@@ -95,6 +115,15 @@ export const useStore = create<RepoState>((set, get) => ({
   playbackSpeed: 1,
 
   keysPressed: new Set(),
+  selectedShip: 'falcon',
+  flightState: {
+    speed: 30,
+    isBoosting: false,
+    yawVelocity: 0,
+    pitchVelocity: 0,
+    rollVelocity: 0,
+    autoBankAngle: 0,
+  },
 
   // Actions
   loadRepo: () => {
@@ -202,6 +231,15 @@ export const useStore = create<RepoState>((set, get) => ({
       newKeys.delete(key)
     }
     set({ keysPressed: newKeys })
+  },
+
+  // Ship actions
+  setSelectedShip: (selectedShip) => set({ selectedShip }),
+
+  // Flight state actions
+  updateFlightState: (state) => {
+    const { flightState } = get()
+    set({ flightState: { ...flightState, ...state } })
   },
 }))
 

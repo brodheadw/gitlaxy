@@ -1,148 +1,186 @@
 import { useEffect, useMemo } from 'react'
 import { useStore } from '../store'
 import type { FolderNode } from '../types'
-import SolarSystem from './SolarSystem'
-import Connections from './Connections'
+import SolarSystem, { countDescendants } from './SolarSystem'
+import * as THREE from 'three'
 
-// Layout folders (solar systems) in a galaxy formation
-function layoutSolarSystems(root: FolderNode): Array<{ folder: FolderNode; position: [number, number, number] }> {
-  const systems: Array<{ folder: FolderNode; position: [number, number, number] }> = []
+interface SystemData {
+  folder: FolderNode
+  position: [number, number, number]
+  depth: number
+  totalChildren: number
+  parentPath: string | null
+}
 
-  // Recursive function to collect all folders
-  function collectFolders(node: FolderNode, depth: number, parentAngle: number, parentRadius: number) {
-    // Calculate position using galaxy spiral arm pattern
-    const numSiblings = node.children.filter(c => c.type === 'folder').length
+// Layout all folders in a galaxy formation
+function layoutAllSystems(root: FolderNode): SystemData[] {
+  const systems: SystemData[] = []
+
+  // Much larger spacing for the expanded galaxy
+  const BASE_SPACING = 3000
+  const DEPTH_SPACING = 2000
+
+  function collectFolders(
+    node: FolderNode,
+    depth: number,
+    parentAngle: number,
+    parentRadius: number,
+    _parentPath: string | null
+  ) {
     const childFolders = node.children.filter((c): c is FolderNode => c.type === 'folder')
-
-    // MASSIVE scale - thousands of units between solar systems
-    const baseSpacing = 2000 // Base distance between systems
-    const depthMultiplier = 1500 // Additional distance per depth level
+    const numSiblings = childFolders.length
 
     childFolders.forEach((child, index) => {
-      // Spiral arm positioning
+      // Spiral arm positioning with more spread
       const armAngle = parentAngle + (index / Math.max(numSiblings, 1)) * Math.PI * 2
-      const spiralOffset = depth * 0.3
+      const spiralOffset = depth * 0.4
 
-      const radius = parentRadius + baseSpacing + depth * depthMultiplier
+      const radius = parentRadius + BASE_SPACING + depth * DEPTH_SPACING
       const angle = armAngle + spiralOffset
 
-      // Add some vertical variation for 3D feel
-      const verticalSpread = 500
-      const y = (Math.random() - 0.5) * verticalSpread + depth * 200
+      // Much more dramatic vertical spread - full 3D distribution
+      // Use a combination of factors to create varied heights
+      const baseVertical = 3000 + depth * 1500
+      const indexVariation = Math.sin(index * 2.7 + depth * 1.3) + Math.cos(index * 1.9)
+      const depthVariation = Math.cos(depth * 0.8 + index * 0.5)
+      const y = indexVariation * baseVertical * 0.5 + depthVariation * baseVertical * 0.3
 
-      const x = Math.cos(angle) * radius + (Math.random() - 0.5) * 300
-      const z = Math.sin(angle) * radius + (Math.random() - 0.5) * 300
+      const x = Math.cos(angle) * radius + (Math.sin(index * 2.1) * 0.3 - 0.15) * 800
+      const z = Math.sin(angle) * radius + (Math.cos(index * 1.7) * 0.3 - 0.15) * 800
+
+      const totalChildren = countDescendants(child)
 
       systems.push({
         folder: child,
         position: [x, y, z],
+        depth,
+        totalChildren,
+        parentPath: node.path,
       })
 
-      // Recursively add subfolders
-      collectFolders(child, depth + 1, angle, radius)
+      // Recursively add nested folders
+      collectFolders(child, depth + 1, angle, radius, child.path)
     })
   }
 
-  // Start with root at center
-  systems.push({
-    folder: root,
-    position: [0, 0, 0],
-  })
-
-  // Collect all nested folders
-  collectFolders(root, 1, 0, 0)
+  // Start from root's children (depth 0 = top-level folders like src, public, etc.)
+  collectFolders(root, 0, 0, 0, root.path)
 
   return systems
 }
 
-// Create layout nodes for connections (simplified version)
-function createConnectionNodes(systems: Array<{ folder: FolderNode; position: [number, number, number] }>) {
-  const nodes: Array<{
-    id: string
-    x: number
-    y: number
-    z: number
-    parentId?: string
-    node: { type: string; path: string }
-  }> = []
+// Leyline connection between parent and child folders
+function Leyline({ start, end, parentDepth }: {
+  start: [number, number, number]
+  end: [number, number, number]
+  parentDepth: number
+}) {
+  const points = useMemo(() => {
+    const startVec = new THREE.Vector3(...start)
+    const endVec = new THREE.Vector3(...end)
 
-  // Create a map of folder paths to positions
-  const positionMap = new Map<string, [number, number, number]>()
-  for (const { folder, position } of systems) {
-    positionMap.set(folder.path, position)
-  }
+    // Create a slight curve for the leyline
+    const mid = new THREE.Vector3().lerpVectors(startVec, endVec, 0.5)
+    mid.y += (endVec.distanceTo(startVec) * 0.05) // Slight arc
 
-  // Create nodes with parent references
-  for (const { folder, position } of systems) {
-    const parentPath = folder.path.split('/').slice(0, -1).join('/') || '/'
+    const curve = new THREE.QuadraticBezierCurve3(startVec, mid, endVec)
+    return curve.getPoints(50)
+  }, [start, end])
 
-    nodes.push({
-      id: folder.path,
-      x: position[0],
-      y: position[1],
-      z: position[2],
-      parentId: folder.path !== '/' ? parentPath : undefined,
-      node: { type: 'folder', path: folder.path },
+  const geometry = useMemo(() => {
+    const geo = new THREE.BufferGeometry().setFromPoints(points)
+    return geo
+  }, [points])
+
+  // Color based on parent depth - bluer for higher level connections
+  const color = useMemo(() => {
+    if (parentDepth === 0) return new THREE.Color('#6699ff') // Blue for top-level
+    if (parentDepth === 1) return new THREE.Color('#8899dd') // Blue-gray
+    return new THREE.Color('#667788') // Gray for deeper
+  }, [parentDepth])
+
+  const line = useMemo(() => {
+    const material = new THREE.LineBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.15,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
     })
-  }
+    return new THREE.Line(geometry, material)
+  }, [geometry, color])
 
-  return nodes
+  return <primitive object={line} />
 }
 
 export default function Galaxy() {
-  const { rootNode, layoutNodes, setLayoutNodes, loadRepo, viewLevel, currentSystem } = useStore()
+  const { rootNode, loadRepo } = useStore()
 
   // Load repo on mount
   useEffect(() => {
     loadRepo()
   }, [loadRepo])
 
-  // Calculate solar system positions
-  const solarSystems = useMemo(() => {
+  // Calculate all solar system positions
+  const systems = useMemo(() => {
     if (!rootNode) return []
-    return layoutSolarSystems(rootNode)
+    return layoutAllSystems(rootNode)
   }, [rootNode])
 
-  // Create layout nodes for connections
-  useEffect(() => {
-    if (solarSystems.length === 0) return
-    const nodes = createConnectionNodes(solarSystems)
-    setLayoutNodes(nodes as any)
-  }, [solarSystems, setLayoutNodes])
+  // Create position lookup for leylines
+  const positionMap = useMemo(() => {
+    const map = new Map<string, [number, number, number]>()
+    // Root is at center
+    map.set('/', [0, 0, 0])
+    for (const sys of systems) {
+      map.set(sys.folder.path, sys.position)
+    }
+    return map
+  }, [systems])
+
+  // Generate leyline connections
+  const leylines = useMemo(() => {
+    const lines: Array<{
+      start: [number, number, number]
+      end: [number, number, number]
+      parentDepth: number
+    }> = []
+
+    for (const sys of systems) {
+      if (sys.parentPath) {
+        const parentPos = positionMap.get(sys.parentPath)
+        if (parentPos) {
+          lines.push({
+            start: parentPos,
+            end: sys.position,
+            parentDepth: sys.depth,
+          })
+        }
+      }
+    }
+
+    return lines
+  }, [systems, positionMap])
 
   if (!rootNode) {
     return null
   }
 
-  // When viewing a specific system, show only that system's contents in detail
-  if (viewLevel === 'system' && currentSystem) {
-    const systemData = solarSystems.find(s => s.folder.path === currentSystem.path)
-    if (systemData) {
-      return (
-        <group>
-          <SolarSystem
-            folder={systemData.folder}
-            position={[0, 0, 0]} // Center the current system
-            isCurrentSystem={true}
-          />
-        </group>
-      )
-    }
-  }
-
-  // Galaxy view - show all solar systems
   return (
     <group>
-      {/* Connection lines between solar systems */}
-      <Connections layoutNodes={layoutNodes} />
+      {/* Leyline connections between folders */}
+      {leylines.map((line, i) => (
+        <Leyline key={`leyline-${i}`} {...line} />
+      ))}
 
-      {/* Render each folder as a solar system */}
-      {solarSystems.map(({ folder, position }) => (
+      {/* Render each folder as a solar system with its file planets */}
+      {systems.map(({ folder, position, depth, totalChildren }) => (
         <SolarSystem
           key={folder.path}
           folder={folder}
           position={position}
-          isCurrentSystem={false}
+          depth={depth}
+          totalChildren={totalChildren}
         />
       ))}
     </group>
