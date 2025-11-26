@@ -4,15 +4,15 @@ export const PERFORMANCE = {
   // Nebula controls
   nebula: {
     quantity: {
-      total: 34,
-      wispMin: 8,
-      wispMax: 14,
-      dustPrimary: 600,
-      dustSecondary: 400,
-      blobMin: 6,
-      blobMax: 10,
-      layersMin: 5,
-      layersMax: 10,
+      total: 12,
+      wispMin: 3,
+      wispMax: 6,
+      dustPrimary: 200,
+      dustSecondary: 100,
+      blobMin: 3,
+      blobMax: 5,
+      layersMin: 3,
+      layersMax: 5,
     },
     animation: {
       wispFloatX: 0.1,
@@ -28,9 +28,9 @@ export const PERFORMANCE = {
       coreWobbleZ: 0.04,
     },
     visual: {
-      wispOpacity: 0.002,
-      dustOpacity: 0.012,
-      layerOpacity: 0.0015,
+      wispOpacity: 0.004,
+      dustOpacity: 0.02,
+      layerOpacity: 0.003,
     },
   },
 
@@ -93,10 +93,10 @@ export const PERFORMANCE = {
     },
     // Geometry detail levels
     geometry: {
-      coreDetail: 64,
-      coronaInner: 32,
-      coronaOuter: 32,
-      glowDetail: 32,
+      coreDetail: 32,
+      coronaInner: 16,
+      coronaOuter: 16,
+      glowDetail: 16,
       interactionDetail: 16,
     },
     // Animation speeds
@@ -137,11 +137,11 @@ export const PERFORMANCE = {
     },
     // Geometry detail levels
     geometry: {
-      sphereDetail: 64,
-      cloudDetail: 48,
-      ringDetail: 64,
-      interactionDetail: 16,
-      selectionRingDetail: 64,
+      sphereDetail: 16,
+      cloudDetail: 12,
+      ringDetail: 32,
+      interactionDetail: 8,
+      selectionRingDetail: 32,
     },
     // Animation speeds
     animation: {
@@ -152,15 +152,15 @@ export const PERFORMANCE = {
     },
     // Texture generation
     texture: {
-      width: 512,
-      height: 256,
-      octaves: 5,
-      scale: 8,
+      width: 128,
+      height: 64,
+      octaves: 3,
+      scale: 6,
     },
     // Atmosphere settings
     atmosphere: {
-      innerScale: 1.12,
-      outerScale: 1.2,
+      innerScale: 1.08,
+      outerScale: 1.15,
     },
     // Orbit calculation
     orbit: {
@@ -226,8 +226,8 @@ export const PERFORMANCE = {
 
   // Update intervals
   updates: {
-    nebulaInterval: 1,
-    orbitInterval: 1,
+    nebulaInterval: 3,
+    orbitInterval: 2,
   },
 
   // Lighting controls
