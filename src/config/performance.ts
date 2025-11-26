@@ -207,6 +207,14 @@ export const PERFORMANCE = {
       baseOpacity: 0.8,
       opacityVariation: 0.3,
     },
+    // Max speed for each ship type
+    maxSpeed: {
+      falcon: 800,     // Fast fighter
+      viper: 1000,     // Fastest interceptor
+      hauler: 600,     // Slowest cargo ship
+      explorer: 700,   // Balanced science vessel
+      custom: 700,     // Default for custom ships
+    },
   },
 
   // Connection lines controls
@@ -219,7 +227,7 @@ export const PERFORMANCE = {
     nebulaAnimation: true,
     wispAnimation: true,
     dustAnimation: true,
-    orbitAnimation: true,
+    orbitAnimation: false,
     folderAnimation: true,
     exhaustAnimation: true,
   },

@@ -1,18 +1,20 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { useStore } from '../store'
+import { useStore, type ShipType } from '../store'
 import { DEFAULT_CONTROLS, MOUSE_SENSITIVITY_BASE, type ControlSettings } from '../config/controls'
 import { PERFORMANCE } from '../config/performance'
 import { useFrameThrottle } from '../hooks/useFrameThrottle'
 
 // NMS-style flight configuration factory
-const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS) => ({
-  // Speed settings (units per second)
-  minSpeed: -300,
-  normalSpeed: 200,
-  maxSpeed: 3000,
-  boostSpeed: 3000,
+const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS, shipType: ShipType = 'falcon') => {
+  const maxSpeed = PERFORMANCE.ship.maxSpeed[shipType]
+  return {
+    // Speed settings (units per second)
+    minSpeed: -300,
+    normalSpeed: 200,
+    maxSpeed,
+    boostSpeed: maxSpeed,
 
   // Acceleration/deceleration - uses control preset values
   acceleration: controls.acceleration,
@@ -37,7 +39,8 @@ const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS) => ({
   mouseSensitivity: MOUSE_SENSITIVITY_BASE * PERFORMANCE.ship.controls.mouseSensitivity * controls.mouseSensitivity,
   invertY: controls.invertY,
   invertX: controls.invertX,
-})
+  }
+}
 
 interface ShipControlsProps {
   controlSettings?: ControlSettings
@@ -52,13 +55,13 @@ const FLIGHT_KEYS = new Set([
 
 export default function ShipControls({ controlSettings }: ShipControlsProps) {
   const { camera, gl } = useThree()
-  const { cameraMode, setCameraMode, keysPressed, setKeyPressed, updateFlightState, showSettings } = useStore()
+  const { cameraMode, setCameraMode, keysPressed, setKeyPressed, updateFlightState, showSettings, selectedShip } = useStore()
 
-  // Create flight config from control settings
-  const cfg = createFlightConfig(controlSettings)
+  // Create flight config from control settings and ship type - recalculate when settings change
+  const cfg = useMemo(() => createFlightConfig(controlSettings, selectedShip), [controlSettings, selectedShip])
 
   // Get physics curves (use defaults if not provided)
-  const physics = controlSettings?.physicsCurves || DEFAULT_CONTROLS.physicsCurves
+  const physics = useMemo(() => controlSettings?.physicsCurves || DEFAULT_CONTROLS.physicsCurves, [controlSettings])
 
   // Flight state
   const currentSpeed = useRef(cfg.minSpeed)
@@ -289,7 +292,7 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
       )
     }
 
-    // --- ROTATION FROM MOUSE WITH INERTIA ---
+    // --- ROTATION FROM MOUSE - LINEAR (NO ACCELERATION) ---
 
     // Consume accumulated mouse input with inversion support
     const mouseX = mouseInput.current.x * cfg.mouseSensitivity * (cfg.invertX ? -1 : 1)
@@ -297,21 +300,16 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
     mouseInput.current.x = 0
     mouseInput.current.y = 0
 
-    // Calculate target rotation velocities with agility
+    // Apply mouse input directly to rotation velocities (linear, no inertia)
     const hasMouseInput = Math.abs(mouseX) > 0.001 || Math.abs(mouseY) > 0.001
     if (hasMouseInput) {
-      targetYawVelocity.current = mouseX * cfg.baseYawRate * agilityMultiplier
-      targetPitchVelocity.current = mouseY * cfg.basePitchRate * agilityMultiplier
+      currentYawVelocity.current = mouseX * cfg.baseYawRate * agilityMultiplier
+      currentPitchVelocity.current = mouseY * cfg.basePitchRate * agilityMultiplier
     } else {
-      // Decelerate rotation when no input
-      targetYawVelocity.current = 0
-      targetPitchVelocity.current = 0
+      // Instantly stop rotation when no mouse input
+      currentYawVelocity.current = 0
+      currentPitchVelocity.current = 0
     }
-
-    // Apply rotation inertia (acceleration into turns)
-    const accelRate = hasMouseInput ? (1 / physics.rotationAccelTime) : (1 / physics.rotationDecelTime)
-    currentYawVelocity.current += (targetYawVelocity.current - currentYawVelocity.current) * Math.min(accelRate * dt, 1)
-    currentPitchVelocity.current += (targetPitchVelocity.current - currentPitchVelocity.current) * Math.min(accelRate * dt, 1)
 
     // --- MANUAL ROLL (A/D keys) ---
 

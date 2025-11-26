@@ -187,18 +187,50 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
   const cfg = PERFORMANCE.files
   const baseSize = cfg.sizing.baseSize + Math.log10(Math.max(file.size, cfg.sizing.minFileSize)) * cfg.sizing.sizeMultiplier
 
+  // Pre-calculate orbit path points
+  const orbitPath = useMemo(() => {
+    const points = 120 // One point per 3 degrees
+    const path = new Float32Array(points * 3)
+
+    for (let i = 0; i < points; i++) {
+      const angle = (i / points) * Math.PI * 2
+      path[i * 3] = Math.cos(angle) * orbitRadius
+      path[i * 3 + 1] = 0 // Y will be calculated separately for wobble
+      path[i * 3 + 2] = Math.sin(angle) * orbitRadius
+    }
+
+    return path
+  }, [orbitRadius])
+
+  const angleRef = useRef(startAngle)
+
   useFrame((state) => {
     if (!planetRef.current) return
     if (!throttle.shouldUpdate()) return
-    const time = PERFORMANCE.toggles.orbitAnimation ? state.clock.elapsedTime : 0
 
-    // Orbit around sun (freeze when orbit animation toggle is off)
-    const angle = startAngle + (PERFORMANCE.toggles.orbitAnimation ? time * orbitSpeed * PERFORMANCE.files.animation.orbitUpdate : 0)
-    planetRef.current.position.x = Math.cos(angle) * orbitRadius
-    planetRef.current.position.z = Math.sin(angle) * orbitRadius
-    planetRef.current.position.y = PERFORMANCE.toggles.orbitAnimation
-      ? Math.sin(angle * cfg.animation.wobbleSpeed) * orbitRadius * cfg.animation.wobbleFactor
-      : 0
+    if (PERFORMANCE.toggles.orbitAnimation) {
+      // Advance angle over time
+      const time = state.clock.elapsedTime
+      const currentAngle = startAngle + time * orbitSpeed * PERFORMANCE.files.animation.orbitUpdate
+      angleRef.current = currentAngle
+
+      // Convert angle to orbit path index
+      const normalizedAngle = ((currentAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)
+      const pathIndex = Math.floor((normalizedAngle / (Math.PI * 2)) * (orbitPath.length / 3))
+      const idx = pathIndex * 3
+
+      planetRef.current.position.x = orbitPath[idx]
+      planetRef.current.position.z = orbitPath[idx + 2]
+
+      // Only calculate wobble (much cheaper than full orbit)
+      planetRef.current.position.y = Math.sin(currentAngle * cfg.animation.wobbleSpeed) *
+        orbitRadius * cfg.animation.wobbleFactor
+    } else {
+      // When animation is frozen, use the start angle to position
+      planetRef.current.position.x = Math.cos(startAngle) * orbitRadius
+      planetRef.current.position.z = Math.sin(startAngle) * orbitRadius
+      planetRef.current.position.y = 0
+    }
   })
 
   return (
