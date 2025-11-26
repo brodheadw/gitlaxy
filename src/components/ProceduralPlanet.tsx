@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { PERFORMANCE } from '../config/performance'
 import { createSeededRandom, fbm, RANDOM_SEEDS } from '../utils/random'
 import { createCanvasTexture, type RGBColor } from '../utils/textureUtils'
+import { textureCache } from '../utils/textureCache'
 
 // Create procedural planet texture
 function createPlanetTexture(
@@ -212,14 +213,23 @@ export default function ProceduralPlanet({
 
   const config = useMemo(() => getPlanetConfig(extension, color), [extension, color])
 
-  // Create textures
+  // Create textures using cache
   const planetTexture = useMemo(
-    () => createPlanetTexture(color, config.secondary, config.tertiary, config.planetType, config.seed),
+    () => textureCache.getPlanetTexture(
+      config.planetType,
+      config.seed,
+      () => createPlanetTexture(color, config.secondary, config.tertiary, config.planetType, config.seed)
+    ),
     [color, config]
   )
 
   const cloudTexture = useMemo(
-    () => config.hasClouds ? createCloudTexture(config.seed) : null,
+    () => config.hasClouds
+      ? textureCache.getCloudTexture(
+          config.seed,
+          () => createCloudTexture(config.seed)
+        )
+      : null,
     [config]
   )
 
@@ -235,28 +245,33 @@ export default function ProceduralPlanet({
   const ringTexture = useMemo(() => {
     if (!config.hasRings) return null
 
-    const canvas = document.createElement('canvas')
-    canvas.width = 256
-    canvas.height = 1
-    const ctx = canvas.getContext('2d')!
+    return textureCache.getRingTexture(
+      config.seed,
+      () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = 256
+        canvas.height = 1
+        const ctx = canvas.getContext('2d')!
 
-    // Create ring bands
-    for (let x = 0; x < canvas.width; x++) {
-      const t = x / canvas.width
-      const bandNoise = Math.sin(t * 50 + config.seed) * 0.3 + Math.sin(t * 120 + config.seed * 2) * 0.2
-      const alpha = Math.max(0, Math.min(1, 0.5 + bandNoise))
+        // Create ring bands
+        for (let x = 0; x < canvas.width; x++) {
+          const t = x / canvas.width
+          const bandNoise = Math.sin(t * 50 + config.seed) * 0.3 + Math.sin(t * 120 + config.seed * 2) * 0.2
+          const alpha = Math.max(0, Math.min(1, 0.5 + bandNoise))
 
-      // Gaps
-      const gap = Math.sin(t * 30) > 0.9 ? 0 : 1
+          // Gaps
+          const gap = Math.sin(t * 30) > 0.9 ? 0 : 1
 
-      const brightness = 0.6 + bandNoise * 0.4
-      ctx.fillStyle = `rgba(${Math.floor(config.tertiary.r * 255 * brightness)}, ${Math.floor(config.tertiary.g * 255 * brightness)}, ${Math.floor(config.tertiary.b * 255 * brightness)}, ${alpha * gap})`
-      ctx.fillRect(x, 0, 1, 1)
-    }
+          const brightness = 0.6 + bandNoise * 0.4
+          ctx.fillStyle = `rgba(${Math.floor(config.tertiary.r * 255 * brightness)}, ${Math.floor(config.tertiary.g * 255 * brightness)}, ${Math.floor(config.tertiary.b * 255 * brightness)}, ${alpha * gap})`
+          ctx.fillRect(x, 0, 1, 1)
+        }
 
-    const texture = new THREE.CanvasTexture(canvas)
-    texture.wrapS = THREE.ClampToEdgeWrapping
-    return texture
+        const texture = new THREE.CanvasTexture(canvas)
+        texture.wrapS = THREE.ClampToEdgeWrapping
+        return texture
+      }
+    )
   }, [config])
 
   useFrame(() => {
@@ -270,18 +285,24 @@ export default function ProceduralPlanet({
     }
   })
 
-  // Cleanup textures on unmount to prevent VRAM leaks
+  // Cleanup: release texture references on unmount
   useEffect(() => {
     return () => {
-      // Dispose of all procedurally generated textures
-      planetTexture?.dispose()
-      cloudTexture?.dispose()
-      ringTexture?.dispose()
+      // Release references to cached textures
+      textureCache.releasePlanetTexture(config.planetType, config.seed)
 
-      // Dispose of ring geometry if it exists
+      if (config.hasClouds) {
+        textureCache.releaseCloudTexture(config.seed)
+      }
+
+      if (config.hasRings) {
+        textureCache.releaseRingTexture(config.seed)
+      }
+
+      // Dispose of ring geometry if it exists (not cached)
       ringGeometry?.dispose()
     }
-  }, [planetTexture, cloudTexture, ringTexture, ringGeometry])
+  }, [config, ringGeometry])
 
   return (
     <group>

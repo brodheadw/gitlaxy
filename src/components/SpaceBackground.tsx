@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { PERFORMANCE } from '../config/performance'
 import { createSeededRandom, RANDOM_SEEDS } from '../utils/random'
 import { useFrameThrottle } from '../hooks/useFrameThrottle'
+import { fastSin, fastCos } from '../utils/mathTables'
 
 // Individual animated wisp/tendril within a nebula
 function NebulaWisp({ position, color, size, seed }: {
@@ -23,17 +24,17 @@ function NebulaWisp({ position, color, size, seed }: {
     const time = state.clock.elapsedTime
     const anim = PERFORMANCE.nebula.animation
 
-    // Gentle floating motion
-    meshRef.current.position.x = position[0] + Math.sin(time * anim.wispFloatX + seed) * size * 0.1
-    meshRef.current.position.y = position[1] + Math.cos(time * anim.wispFloatY + seed * 2) * size * 0.08
-    meshRef.current.position.z = position[2] + Math.sin(time * anim.wispFloatZ + seed * 3) * size * 0.1
+    // Gentle floating motion - using fast lookup tables
+    meshRef.current.position.x = position[0] + fastSin(time * anim.wispFloatX + seed) * size * 0.1
+    meshRef.current.position.y = position[1] + fastCos(time * anim.wispFloatY + seed * 2) * size * 0.08
+    meshRef.current.position.z = position[2] + fastSin(time * anim.wispFloatZ + seed * 3) * size * 0.1
 
     // Slow rotation
     meshRef.current.rotation.x = time * anim.wispRotateX + seed
     meshRef.current.rotation.y = time * anim.wispRotateY
 
-    // Pulsing scale
-    const pulse = 1 + Math.sin(time * anim.wispPulse + seed) * 0.15
+    // Pulsing scale - using fast lookup table
+    const pulse = 1 + fastSin(time * anim.wispPulse + seed) * 0.15
     meshRef.current.scale.setScalar(pulse)
   })
 
@@ -89,9 +90,9 @@ function NebulaDust({ basePosition, color, count, spread, seed }: {
     const time = state.clock.elapsedTime
     const anim = PERFORMANCE.nebula.animation
 
-    // Slow swirling motion
+    // Slow swirling motion - using fast lookup table
     pointsRef.current.rotation.y = time * anim.dustRotateY + seed
-    pointsRef.current.rotation.x = Math.sin(time * anim.dustRotateX) * 0.1
+    pointsRef.current.rotation.x = fastSin(time * anim.dustRotateX) * 0.1
   })
 
   const geometry = useMemo(() => {
@@ -200,10 +201,10 @@ function VolumetricNebula({ position, color, secondaryColor, size, seed }: {
     // Very slow overall rotation
     groupRef.current.rotation.y = time * anim.groupRotate
 
-    // Core group has slight wobble
+    // Core group has slight wobble - using fast lookup tables
     if (coreRef.current) {
-      coreRef.current.rotation.x = Math.sin(time * anim.coreWobbleX) * 0.05
-      coreRef.current.rotation.z = Math.cos(time * anim.coreWobbleZ) * 0.03
+      coreRef.current.rotation.x = fastSin(time * anim.coreWobbleX) * 0.05
+      coreRef.current.rotation.z = fastCos(time * anim.coreWobbleZ) * 0.03
     }
   })
 

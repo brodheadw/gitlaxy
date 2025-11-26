@@ -427,6 +427,10 @@ export default function Spaceship() {
   const { cameraMode, selectedShip, flightState } = useStore()
   const { camera } = useThree()
 
+  useEffect(() => {
+    console.log('SPACESHIP MODEL TO RENDER:', selectedShip)
+  }, [selectedShip])
+
   useFrame((state, delta) => {
     if (!shipRef.current || cameraMode !== 'fly') return
 

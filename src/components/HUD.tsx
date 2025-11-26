@@ -3,7 +3,7 @@ import type { ShipType } from '../store'
 import { SHIP_INFO } from './Spaceship'
 import './HUD.css'
 
-const SHIP_TYPES: ShipType[] = ['falcon', 'viper', 'hauler', 'explorer']
+const SHIP_TYPES: ShipType[] = ['falcon', 'viper', 'hauler', 'explorer', 'custom']
 
 export default function HUD() {
   const {
