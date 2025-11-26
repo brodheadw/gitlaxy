@@ -176,13 +176,12 @@ export default function HUD() {
         <div className="speed-indicator">
           <div className="speed-bar-container">
             <div
-              className={`speed-bar ${flightState.isBoosting ? 'boosting' : ''}`}
-              style={{ width: `${Math.min((flightState.speed / 1800) * 100, 100)}%` }}
+              className={`speed-bar ${flightState.isBoosting ? 'boosting' : ''} ${flightState.speed < 0 ? 'reverse' : ''}`}
+              style={{ width: `${Math.min(Math.abs(flightState.speed) / 6000 * 100, 100)}%` }}
             />
             <div className="speed-markers">
-              <span className="marker" style={{ left: '2.7%' }} title="Min (30)" />
-              <span className="marker" style={{ left: '27.8%' }} title="Max (500)" />
-              <span className="marker boost-marker" style={{ left: '100%' }} title="Boost (1800)" />
+              <span className="marker" style={{ left: '50%' }} title="Max (3000)" />
+              <span className="marker boost-marker" style={{ left: '100%' }} title="Boost (6000)" />
             </div>
           </div>
           <div className="speed-value">

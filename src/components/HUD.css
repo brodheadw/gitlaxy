@@ -526,6 +526,10 @@ kbd {
   animation: boostPulse 0.3s ease-in-out infinite;
 }
 
+.speed-bar.reverse {
+  background: linear-gradient(90deg, #ff6b6b, #cc4444);
+}
+
 @keyframes boostPulse {
   0%, 100% { background-position: 0% 0%; }
   50% { background-position: 100% 0%; }

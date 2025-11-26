@@ -416,29 +416,26 @@ export default function Spaceship() {
     shipRef.current.position.copy(camera.position).add(offset)
     shipRef.current.quaternion.copy(camera.quaternion)
 
-    // Visual roll from auto-banking + manual roll input
-    // Auto-bank is based on yaw velocity, manual roll adds on top
-    const autoBankVisual = flightState.autoBankAngle * 0.8
-    const manualRollVisual = flightState.rollVelocity * 0.15
-    const targetRoll = autoBankVisual + manualRollVisual
+    // Extra visual effects on top of camera rotation (ship already follows camera exactly)
+    // These are small cosmetic tilts that make the ship feel more alive
 
-    // Visual pitch based on speed changes
-    // Nose down when accelerating/boosting, nose up when braking
-    const speedFactor = (flightState.speed - 30) / (1800 - 30) // Normalized 0-1
-    let targetPitch = -speedFactor * 0.1 // Slight nose down at high speed
+    // Auto-bank visual: slight extra tilt into turns (purely cosmetic, camera already handles actual roll)
+    const autoBankVisual = flightState.yawVelocity * -0.08
+
+    // Visual pitch based on speed/boost (cosmetic nose tilt)
+    const speedFactor = (flightState.speed - 30) / (1800 - 30)
+    let targetPitch = -speedFactor * 0.05
     if (flightState.isBoosting) {
-      targetPitch = -0.2 // More aggressive nose down during boost
+      targetPitch = -0.12
     }
-    // Add pitch velocity contribution
-    targetPitch += flightState.pitchVelocity * 0.05
+    targetPitch += flightState.pitchVelocity * 0.03
 
-    // Smooth interpolation for visual roll and pitch
-    const rollSmoothing = 6
-    const pitchSmoothing = 4
-    visualRoll.current += (targetRoll - visualRoll.current) * Math.min(rollSmoothing * dt, 1)
-    visualPitch.current += (targetPitch - visualPitch.current) * Math.min(pitchSmoothing * dt, 1)
+    // Smooth only the cosmetic effects (these are small additions, not the main rotation)
+    const smoothing = 8
+    visualRoll.current += (autoBankVisual - visualRoll.current) * Math.min(smoothing * dt, 1)
+    visualPitch.current += (targetPitch - visualPitch.current) * Math.min(smoothing * dt, 1)
 
-    // Apply visual roll and pitch to the ship model
+    // Apply small cosmetic tilts to the ship model
     if (shipModelRef.current) {
       shipModelRef.current.rotation.z = visualRoll.current
       shipModelRef.current.rotation.x = visualPitch.current

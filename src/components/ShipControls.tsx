@@ -6,10 +6,10 @@ import { useStore } from '../store'
 // NMS-style flight configuration
 const FLIGHT_CONFIG = {
   // Speed settings (units per second)
-  minSpeed: 30,           // Minimum forward speed (always moving)
-  normalSpeed: 200,       // Normal cruise speed
-  maxSpeed: 500,          // Maximum normal speed
-  boostSpeed: 1800,       // Boost speed
+  minSpeed: -300,         // Reverse speed limit
+  normalSpeed: 200,       // Normal cruise speed (only used when W is held)
+  maxSpeed: 3000,         // Maximum normal speed
+  boostSpeed: 6000,       // Boost speed (2x max)
 
   // Acceleration/deceleration
   acceleration: 150,      // How fast we speed up
@@ -31,7 +31,7 @@ const FLIGHT_CONFIG = {
   agilityAtBoost: 0.15,   // Turn rate multiplier during boost
 
   // Mouse sensitivity
-  mouseSensitivity: 0.0015,
+  mouseSensitivity: 0.004,
 }
 
 interface ShipControlsProps {
@@ -75,8 +75,7 @@ export default function ShipControls({ config }: ShipControlsProps) {
   // Reset state when entering fly mode
   useEffect(() => {
     if (cameraMode === 'fly') {
-      currentSpeed.current = cfg.minSpeed
-      targetSpeed.current = cfg.normalSpeed
+      currentSpeed.current = 0  // Start stationary
       isBoosting.current = false
       currentYawVelocity.current = 0
       currentPitchVelocity.current = 0
@@ -84,7 +83,7 @@ export default function ShipControls({ config }: ShipControlsProps) {
       autoBankAngle.current = 0
       mouseInput.current = { x: 0, y: 0 }
     }
-  }, [cameraMode, cfg.minSpeed, cfg.normalSpeed])
+  }, [cameraMode])
 
   // Mouse and keyboard handlers
   useEffect(() => {
@@ -171,42 +170,43 @@ export default function ShipControls({ config }: ShipControlsProps) {
 
     // --- SPEED MANAGEMENT ---
 
-    // Determine target speed based on input
+    // Only change speed when keys are pressed - maintain current speed otherwise
     if (isBoosting.current) {
-      targetSpeed.current = cfg.boostSpeed
+      // Boosting - accelerate toward boost speed
+      const speedDiff = cfg.boostSpeed - currentSpeed.current
+      if (speedDiff > 0) {
+        currentSpeed.current += Math.min(cfg.acceleration * 3 * dt, speedDiff)
+      }
     } else if (isThrusting) {
-      targetSpeed.current = cfg.maxSpeed
+      // W key - accelerate toward max speed (capped at maxSpeed without boost)
+      if (currentSpeed.current < cfg.maxSpeed) {
+        const speedDiff = cfg.maxSpeed - currentSpeed.current
+        currentSpeed.current += Math.min(cfg.acceleration * dt, speedDiff)
+      }
     } else if (isBraking) {
-      targetSpeed.current = cfg.minSpeed
-    } else {
-      // Gradually return to normal cruise when no input
-      targetSpeed.current = cfg.normalSpeed
+      // S key - decelerate (can go into reverse)
+      currentSpeed.current -= cfg.brakeForce * dt
+    }
+    // No keys pressed = maintain current speed (no auto-cruise)
+
+    // Snap to zero when close (makes it easy to stop)
+    if (Math.abs(currentSpeed.current) < 15 && !isThrusting && !isBraking) {
+      currentSpeed.current = 0
     }
 
-    // Accelerate/decelerate toward target speed
-    const speedDiff = targetSpeed.current - currentSpeed.current
-    if (speedDiff > 0) {
-      // Accelerating
-      const accel = isBoosting.current ? cfg.acceleration * 3 : cfg.acceleration
-      currentSpeed.current += Math.min(accel * dt, speedDiff)
-    } else if (speedDiff < 0) {
-      // Decelerating
-      const decel = isBraking ? cfg.brakeForce : cfg.deceleration
-      currentSpeed.current += Math.max(-decel * dt, speedDiff)
-    }
-
-    // Enforce minimum speed (NMS ships always move forward)
-    currentSpeed.current = Math.max(currentSpeed.current, cfg.minSpeed)
+    // Clamp to speed limits
+    currentSpeed.current = THREE.MathUtils.clamp(currentSpeed.current, cfg.minSpeed, cfg.boostSpeed)
 
     // --- AGILITY CALCULATION ---
 
-    // Calculate agility multiplier based on current speed
+    // Calculate agility multiplier based on absolute speed (full agility when slow, reduced when fast)
     let agilityMultiplier: number
     if (isBoosting.current) {
       agilityMultiplier = cfg.agilityAtBoost
     } else {
-      // Lerp between min and max speed agility
-      const speedNormalized = (currentSpeed.current - cfg.minSpeed) / (cfg.maxSpeed - cfg.minSpeed)
+      // Use absolute speed for agility - same handling for forward and reverse
+      const absSpeed = Math.abs(currentSpeed.current)
+      const speedNormalized = absSpeed / cfg.maxSpeed
       agilityMultiplier = THREE.MathUtils.lerp(
         cfg.agilityAtMinSpeed,
         cfg.agilityAtMaxSpeed,

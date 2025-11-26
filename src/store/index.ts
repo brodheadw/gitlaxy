@@ -117,7 +117,7 @@ export const useStore = create<RepoState>((set, get) => ({
   keysPressed: new Set(),
   selectedShip: 'falcon',
   flightState: {
-    speed: 30,
+    speed: 0,
     isBoosting: false,
     yawVelocity: 0,
     pitchVelocity: 0,
