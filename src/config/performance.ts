@@ -62,31 +62,31 @@ export const PERFORMANCE = {
     },
   },
 
-  // Stars controls - using multiple layers to fill volume
+  // Stars controls - using multiple layers to fill volume (scaled 5x for immersive universe)
   stars: {
     // Inner layer
-    innerRadius: 10000,
-    innerDepth: 20000,   // 0 to 20000 units
-    innerCount: 8000,
+    innerRadius: 50000,
+    innerDepth: 100000,   // 0 to 100000 units
+    innerCount: 10000,
     // Outer layer
-    outerRadius: 50000,
-    outerDepth: 60000,   // 20000 to 80000 units
-    outerCount: 12000,
+    outerRadius: 250000,
+    outerDepth: 300000,   // 100000 to 400000 units
+    outerCount: 15000,
     // Shared settings
     size: 8,
     saturation: 0.1,
   },
 
-  // Folder (sun) controls
+  // Folder (sun) controls - scaled 5x for immersive universe
   folders: {
-    // Star size calculation based on depth and descendants
+    // Star size calculation based on depth and descendants (5x scale)
     sizing: {
-      depth0Large: { base: 120, multiplier: 2, max: 100, minDescendants: 10 },
-      depth0Small: { base: 80, multiplier: 5, max: 60 },
-      depth1Large: { base: 60, multiplier: 4, max: 50, minChildren: 5 },
-      depth1Small: { base: 45, multiplier: 3, max: 35 },
-      depth2: { base: 35, multiplier: 2, max: 25 },
-      depthDeep: { base: 25, multiplier: 1.5, max: 15 },
+      depth0Large: { base: 600, multiplier: 10, max: 500, minDescendants: 10 },
+      depth0Small: { base: 400, multiplier: 25, max: 300 },
+      depth1Large: { base: 300, multiplier: 20, max: 250, minChildren: 5 },
+      depth1Small: { base: 225, multiplier: 15, max: 175 },
+      depth2: { base: 175, multiplier: 10, max: 125 },
+      depthDeep: { base: 125, multiplier: 7.5, max: 75 },
     },
     // Star intensity by type
     intensity: {
@@ -125,20 +125,20 @@ export const PERFORMANCE = {
       coronaOuterOpacity: 0.15,
       glowOpacity: 0.05,
     },
-    // UI elements
+    // UI elements (5x scale)
     ui: {
-      labelDistance: 200,
+      labelDistance: 1000,
       hoverBackground: 'rgba(0, 0, 0, 0.9)',
       defaultBackground: 'rgba(0, 0, 0, 0.5)',
     },
   },
 
-  // File (planet) controls
+  // File (planet) controls - scaled 5x for immersive universe
   files: {
-    // Planet sizing
+    // Planet sizing (5x scale)
     sizing: {
-      baseSize: 15,
-      sizeMultiplier: 8,
+      baseSize: 75,
+      sizeMultiplier: 40,
       minFileSize: 100,
     },
     // Geometry detail levels
@@ -168,10 +168,10 @@ export const PERFORMANCE = {
       innerScale: 1.12,
       outerScale: 1.2,
     },
-    // Orbit calculation
+    // Orbit calculation (5x scale)
     orbit: {
-      radiusBase: 2.5,
-      radiusSpacing: 100,
+      radiusBase: 12.5,
+      radiusSpacing: 500,
       speedBase: 0.02,
       angleSpacing: 0.3,
     },
@@ -187,16 +187,16 @@ export const PERFORMANCE = {
       labelOffset: 1.5,
       labelExtraOffset: 5,
     },
-    // UI elements
+    // UI elements (5x scale)
     ui: {
-      labelDistance: 120,
+      labelDistance: 600,
       background: 'rgba(0, 0, 0, 0.85)',
     },
   },
 
-  // Orbit ring visualization
+  // Orbit ring visualization (5x scale)
   orbitRings: {
-    thickness: 1.0,
+    thickness: 5.0,
     detail: 128,
     opacity: 0.08,
   },
@@ -236,11 +236,11 @@ export const PERFORMANCE = {
     orbitInterval: 1,
   },
 
-  // Lighting controls
+  // Lighting controls (5x scale for folder light distance)
   lighting: {
     ambient: 0.05,
     directional: 0.3,
-    folderDistance: 25,
+    folderDistance: 125,
     folderDecay: 2,
   },
 } as const

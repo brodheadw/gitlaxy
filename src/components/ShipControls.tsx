@@ -6,13 +6,13 @@ import { DEFAULT_CONTROLS, MOUSE_SENSITIVITY_BASE, type ControlSettings } from '
 import { PERFORMANCE } from '../config/performance'
 import { useFrameThrottle } from '../hooks/useFrameThrottle'
 
-// NMS-style flight configuration factory
+// NMS-style flight configuration factory (5x scale for immersive universe)
 const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS) => ({
-  // Speed settings (units per second)
-  minSpeed: -300,
-  normalSpeed: 200,
-  maxSpeed: 3000,
-  boostSpeed: 3000,
+  // Speed settings (units per second) - 5x for larger universe
+  minSpeed: -1500,
+  normalSpeed: 1000,
+  maxSpeed: 15000,
+  boostSpeed: 15000,
 
   // Acceleration/deceleration - uses control preset values
   acceleration: controls.acceleration,

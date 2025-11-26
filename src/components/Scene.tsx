@@ -51,7 +51,7 @@ export default function Scene() {
       {/* Spaceship visible in fly mode */}
       <Spaceship />
 
-      {/* Camera controls */}
+      {/* Camera controls (5x scale) */}
       {cameraMode === 'orbit' && (
         <OrbitControls
           enablePan={true}
@@ -60,8 +60,8 @@ export default function Scene() {
           zoomSpeed={0.5}
           panSpeed={0.5}
           rotateSpeed={0.3}
-          minDistance={50}
-          maxDistance={50000}
+          minDistance={250}
+          maxDistance={250000}
         />
       )}
 

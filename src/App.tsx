@@ -9,7 +9,7 @@ function App() {
   return (
     <>
       <Canvas
-        camera={{ position: [0, 800, 4000], fov: 60, near: 1, far: 100000 }}
+        camera={{ position: [0, 4000, 20000], fov: 60, near: 1, far: 500000 }}
         gl={{ antialias: true, alpha: false, logarithmicDepthBuffer: true }}
       >
         <color attach="background" args={['#010103']} />
