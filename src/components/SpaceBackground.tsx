@@ -2,7 +2,8 @@ import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { PERFORMANCE } from '../config/performance'
-import { createSeededRandom } from '../utils/random'
+import { createSeededRandom, RANDOM_SEEDS } from '../utils/random'
+import { useFrameThrottle } from '../hooks/useFrameThrottle'
 
 // Individual animated wisp/tendril within a nebula
 function NebulaWisp({ position, color, size, seed }: {
@@ -12,13 +13,12 @@ function NebulaWisp({ position, color, size, seed }: {
   seed: number
 }) {
   const meshRef = useRef<THREE.Mesh>(null)
-  const updateCounter = useRef(0)
+  const throttle = useFrameThrottle(PERFORMANCE.updates.nebulaInterval)
 
   useFrame((state) => {
     if (!meshRef.current) return
     if (!PERFORMANCE.toggles.nebulaAnimation || !PERFORMANCE.toggles.wispAnimation) return
-    updateCounter.current += 1
-    if (updateCounter.current % PERFORMANCE.updates.nebulaInterval !== 0) return
+    if (!throttle.shouldUpdate()) return
 
     const time = state.clock.elapsedTime
     const anim = PERFORMANCE.nebula.animation
@@ -61,12 +61,12 @@ function NebulaDust({ basePosition, color, count, spread, seed }: {
   seed: number
 }) {
   const pointsRef = useRef<THREE.Points>(null)
-  const updateCounter = useRef(0)
+  const throttle = useFrameThrottle(PERFORMANCE.updates.nebulaInterval)
 
   const { positions, sizes } = useMemo(() => {
     const pos = new Float32Array(count * 3)
     const siz = new Float32Array(count)
-    const seeded = createSeededRandom(seed, 1337)
+    const seeded = createSeededRandom(seed, RANDOM_SEEDS.dustParticles)
 
     for (let i = 0; i < count; i++) {
       const theta = seeded(i) * Math.PI * 2
@@ -84,8 +84,7 @@ function NebulaDust({ basePosition, color, count, spread, seed }: {
   useFrame((state) => {
     if (!pointsRef.current) return
     if (!PERFORMANCE.toggles.nebulaAnimation || !PERFORMANCE.toggles.dustAnimation) return
-    updateCounter.current += 1
-    if (updateCounter.current % PERFORMANCE.updates.nebulaInterval !== 0) return
+    if (!throttle.shouldUpdate()) return
 
     const time = state.clock.elapsedTime
     const anim = PERFORMANCE.nebula.animation
@@ -133,7 +132,7 @@ function VolumetricNebula({ position, color, secondaryColor, size, seed }: {
   const cfg = PERFORMANCE.nebula
 
   // Seeded random for consistent generation
-  const seededRandom = createSeededRandom(seed, 9999)
+  const seededRandom = createSeededRandom(seed, RANDOM_SEEDS.nebulaWisps)
 
   // Create multiple blob positions for this nebula region
   const blobs = useMemo(() => {

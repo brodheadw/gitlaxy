@@ -1,12 +1,15 @@
-import { useRef, useState, useMemo } from 'react'
+import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Html, Sphere } from '@react-three/drei'
+import { Sphere } from '@react-three/drei'
 import * as THREE from 'three'
 import type { FolderNode, FileNode } from '../types'
 import { getColorForExtension } from '../types'
 import { useStore } from '../store'
 import ProceduralPlanet from './ProceduralPlanet'
+import NodeLabel from './NodeLabel'
 import { PERFORMANCE } from '../config/performance'
+import { useNodeInteraction } from '../hooks/useNodeInteraction'
+import { useFrameThrottle } from '../hooks/useFrameThrottle'
 
 interface SolarSystemProps {
   folder: FolderNode
@@ -72,8 +75,7 @@ function Sun({ folder, depth, totalChildren }: {
 }) {
   const sunRef = useRef<THREE.Group>(null)
   const coronaRef = useRef<THREE.Mesh>(null)
-  const [isHovered, setIsHovered] = useState(false)
-  const { selectNode, hoverNode } = useStore()
+  const { isHovered, handlers } = useNodeInteraction(folder)
 
   const starProps = useMemo(
     () => getStarProperties(depth, folder.children.length, totalChildren),
@@ -99,21 +101,9 @@ function Sun({ folder, depth, totalChildren }: {
     <group ref={sunRef}>
       {/* Interaction mesh */}
       <mesh
-        onClick={(e) => {
-          e.stopPropagation()
-          selectNode(folder)
-        }}
-        onPointerOver={(e) => {
-          e.stopPropagation()
-          setIsHovered(true)
-          hoverNode(folder)
-          document.body.style.cursor = 'pointer'
-        }}
-        onPointerOut={() => {
-          setIsHovered(false)
-          hoverNode(null)
-          document.body.style.cursor = 'default'
-        }}
+        onClick={handlers.onClick}
+        onPointerOver={handlers.onPointerOver}
+        onPointerOut={handlers.onPointerOut}
       >
         <sphereGeometry args={[starProps.size * PERFORMANCE.folders.scale.interaction, PERFORMANCE.folders.geometry.interactionDetail, PERFORMANCE.folders.geometry.interactionDetail]} />
         <meshBasicMaterial transparent opacity={0} />
@@ -166,28 +156,14 @@ function Sun({ folder, depth, totalChildren }: {
       />
 
       {/* Label */}
-      <Html
+      <NodeLabel
         position={[0, starProps.size * PERFORMANCE.folders.scale.labelOffset, 0]}
-        center
         distanceFactor={PERFORMANCE.folders.ui.labelDistance}
-        style={{ pointerEvents: 'none' }}
-      >
-        <div
-          style={{
-            background: isHovered ? PERFORMANCE.folders.ui.hoverBackground : PERFORMANCE.folders.ui.defaultBackground,
-            color: `#${starProps.color.getHexString()}`,
-            padding: '4px 10px',
-            borderRadius: '4px',
-            fontSize: '13px',
-            fontFamily: 'monospace',
-            whiteSpace: 'nowrap',
-            border: `1px solid #${starProps.color.getHexString()}44`,
-            textShadow: `0 0 10px #${starProps.color.getHexString()}`,
-          }}
-        >
-          {folder.name}/
-        </div>
-      </Html>
+        color={starProps.color}
+        label={`${folder.name}/`}
+        isHovered={isHovered}
+        variant="sun"
+      />
     </group>
   )
 }
@@ -200,9 +176,9 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
   startAngle: number
 }) {
   const planetRef = useRef<THREE.Group>(null)
-  const orbitUpdateCounter = useRef(0)
-  const [isHovered, setIsHovered] = useState(false)
-  const { selectNode, hoverNode, selectedNode } = useStore()
+  const throttle = useFrameThrottle(PERFORMANCE.updates.orbitInterval)
+  const { isHovered, handlers } = useNodeInteraction(file)
+  const { selectedNode } = useStore()
 
   const color = useMemo(() => new THREE.Color(getColorForExtension(file.extension)), [file.extension])
   const isSelected = selectedNode?.id === file.id
@@ -213,8 +189,7 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
 
   useFrame((state) => {
     if (!planetRef.current) return
-    orbitUpdateCounter.current += 1
-    if (orbitUpdateCounter.current % PERFORMANCE.updates.orbitInterval !== 0) return
+    if (!throttle.shouldUpdate()) return
     const time = PERFORMANCE.toggles.orbitAnimation ? state.clock.elapsedTime : 0
 
     // Orbit around sun (freeze when orbit animation toggle is off)
@@ -230,21 +205,9 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
     <group ref={planetRef}>
       {/* Interaction mesh */}
       <mesh
-        onClick={(e) => {
-          e.stopPropagation()
-          selectNode(file)
-        }}
-        onPointerOver={(e) => {
-          e.stopPropagation()
-          setIsHovered(true)
-          hoverNode(file)
-          document.body.style.cursor = 'pointer'
-        }}
-        onPointerOut={() => {
-          setIsHovered(false)
-          hoverNode(null)
-          document.body.style.cursor = 'default'
-        }}
+        onClick={handlers.onClick}
+        onPointerOver={handlers.onPointerOver}
+        onPointerOut={handlers.onPointerOut}
       >
         <sphereGeometry args={[baseSize * cfg.visual.interactionScale, cfg.geometry.interactionDetail, cfg.geometry.interactionDetail]} />
         <meshBasicMaterial transparent opacity={0} />
@@ -274,27 +237,14 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
 
       {/* Label - only show on hover */}
       {isHovered && (
-        <Html
+        <NodeLabel
           position={[0, baseSize * cfg.visual.labelOffset + cfg.visual.labelExtraOffset, 0]}
-          center
           distanceFactor={cfg.ui.labelDistance}
-          style={{ pointerEvents: 'none' }}
-        >
-          <div
-            style={{
-              background: cfg.ui.background,
-              color: `#${color.getHexString()}`,
-              padding: '3px 8px',
-              borderRadius: '3px',
-              fontSize: '11px',
-              fontFamily: 'monospace',
-              whiteSpace: 'nowrap',
-              border: `1px solid #${color.getHexString()}44`,
-            }}
-          >
-            {file.name}
-          </div>
-        </Html>
+          color={color}
+          label={file.name}
+          isHovered={isHovered}
+          variant="planet"
+        />
       )}
     </group>
   )

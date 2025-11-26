@@ -2,7 +2,8 @@ import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { PERFORMANCE } from '../config/performance'
-import { createSeededRandom, noise, fbm } from '../utils/random'
+import { createSeededRandom, fbm, RANDOM_SEEDS } from '../utils/random'
+import { createCanvasTexture, type RGBColor } from '../utils/textureUtils'
 
 // Create procedural planet texture
 function createPlanetTexture(
@@ -13,29 +14,16 @@ function createPlanetTexture(
   seed: number
 ): THREE.CanvasTexture {
   const textureCfg = PERFORMANCE.files.texture
-  const canvas = document.createElement('canvas')
-  canvas.width = textureCfg.width
-  canvas.height = textureCfg.height
-  const ctx = canvas.getContext('2d')!
   const baseScale = textureCfg.scale
   const baseOctaves = textureCfg.octaves
 
-  // Create seeded random function with multiplier 9999
-  const random = createSeededRandom(seed, 9999)
+  // Create seeded random function for planet texture
+  const random = createSeededRandom(seed, RANDOM_SEEDS.planetTexture)
 
-  // Draw based on planet type
-  for (let y = 0; y < canvas.height; y++) {
-    for (let x = 0; x < canvas.width; x++) {
-      const u = x / canvas.width
-      const v = y / canvas.height
-
-      // Spherical coordinates
-      const theta = u * Math.PI * 2
-      const phi = v * Math.PI
-      const sx = Math.sin(phi) * Math.cos(theta)
-      const sy = Math.cos(phi)
-      const sz = Math.sin(phi) * Math.sin(theta)
-
+  return createCanvasTexture(
+    textureCfg.width,
+    textureCfg.height,
+    (_u, _v, sx, sy, sz): RGBColor => {
       let r: number, g: number, b: number
 
       if (planetType === 0) {
@@ -138,58 +126,36 @@ function createPlanetTexture(
         }
       }
 
-      ctx.fillStyle = `rgb(${Math.floor(r * 255)}, ${Math.floor(g * 255)}, ${Math.floor(b * 255)})`
-      ctx.fillRect(x, y, 1, 1)
+      return { r, g, b }
     }
-  }
-
-  const texture = new THREE.CanvasTexture(canvas)
-  texture.wrapS = THREE.RepeatWrapping
-  texture.wrapT = THREE.ClampToEdgeWrapping
-  return texture
+  )
 }
 
 // Create cloud texture
 function createCloudTexture(seed: number): THREE.CanvasTexture {
   const textureCfg = PERFORMANCE.files.texture
-  const canvas = document.createElement('canvas')
-  canvas.width = textureCfg.width
-  canvas.height = textureCfg.height
-  const ctx = canvas.getContext('2d')!
   const baseScale = textureCfg.scale
   const baseOctaves = textureCfg.octaves
 
-  // Create seeded random function with multiplier 7777
-  const random = createSeededRandom(seed, 7777)
+  // Create seeded random function for cloud texture
+  const random = createSeededRandom(seed, RANDOM_SEEDS.cloudTexture)
 
-  ctx.fillStyle = 'rgba(0, 0, 0, 0)'
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-  for (let y = 0; y < canvas.height; y++) {
-    for (let x = 0; x < canvas.width; x++) {
-      const u = x / canvas.width
-      const v = y / canvas.height
-
-      const theta = u * Math.PI * 2
-      const phi = v * Math.PI
-      const sx = Math.sin(phi) * Math.cos(theta)
-      const sy = Math.cos(phi)
-      const sz = Math.sin(phi) * Math.sin(theta)
-
+  return createCanvasTexture(
+    textureCfg.width,
+    textureCfg.height,
+    (_u, _v, sx, sy, sz): RGBColor | null => {
       const clouds = fbm(sx * baseScale * 0.25, sz * baseScale * 0.25 + sy, random, baseScale, baseOctaves, seed)
 
       if (clouds > 0.5) {
         const alpha = Math.min((clouds - 0.5) * 3, 0.8)
-        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`
-        ctx.fillRect(x, y, 1, 1)
+        return { r: 1, g: 1, b: 1, a: alpha } as RGBColor & { a: number }
       }
-    }
-  }
 
-  const texture = new THREE.CanvasTexture(canvas)
-  texture.wrapS = THREE.RepeatWrapping
-  texture.wrapT = THREE.ClampToEdgeWrapping
-  return texture
+      // Return null for transparent pixels
+      return null
+    },
+    true // Clear canvas for transparency
+  )
 }
 
 // Planet type configuration based on file extension
