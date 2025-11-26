@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { FolderNode, GitCommit, RepoInfo, RepoNode, LayoutNode } from '../types'
+import type { FolderNode, FileNode, GitCommit, RepoInfo, RepoNode, LayoutNode } from '../types'
 import { createDemoRepo, createDemoCommits, getRepoInfo } from '../utils/gitParser'
 import { DEFAULT_CONTROLS, type ControlSettings } from '../config/controls'
 
@@ -7,6 +7,14 @@ export type ViewMode = 'explore' | 'history'
 export type CameraMode = 'orbit' | 'fly'
 export type ViewLevel = 'galaxy' | 'system' // galaxy = all systems, system = inside one folder
 export type ShipType = 'falcon' | 'viper' | 'hauler' | 'explorer'
+export type LandingState = 'flying' | 'approaching' | 'landed'
+
+// Info about the nearest planet for landing
+interface NearestPlanetInfo {
+  node: FileNode
+  distance: number
+  worldPosition: [number, number, number]
+}
 
 interface CameraState {
   position: { x: number; y: number; z: number }
@@ -58,6 +66,17 @@ interface RepoState {
   showSettings: boolean
   controlSettings: ControlSettings
 
+  // Landing state
+  landingState: LandingState
+  landingTarget: FileNode | null
+  nearestPlanet: NearestPlanetInfo | null
+
+  // Editor state
+  isEditorOpen: boolean
+  editorContent: string | null
+  hasUnsavedChanges: boolean
+  editorError: string | null
+
   // Actions
   loadRepo: () => void
   setViewMode: (mode: ViewMode) => void
@@ -96,6 +115,20 @@ interface RepoState {
   // Settings actions
   setShowSettings: (show: boolean) => void
   setControlSettings: (settings: ControlSettings) => void
+
+  // Landing actions
+  setLandingState: (state: LandingState) => void
+  setLandingTarget: (target: FileNode | null) => void
+  setNearestPlanet: (info: NearestPlanetInfo | null) => void
+  initiateLanding: (planet: FileNode) => void
+  completeTakeoff: () => void
+
+  // Editor actions
+  openEditor: (content: string) => void
+  closeEditor: () => void
+  setEditorContent: (content: string) => void
+  setEditorError: (error: string | null) => void
+  setHasUnsavedChanges: (dirty: boolean) => void
 }
 
 export const useStore = create<RepoState>((set, get) => ({
@@ -136,6 +169,17 @@ export const useStore = create<RepoState>((set, get) => ({
 
   showSettings: false,
   controlSettings: DEFAULT_CONTROLS,
+
+  // Landing state
+  landingState: 'flying',
+  landingTarget: null,
+  nearestPlanet: null,
+
+  // Editor state
+  isEditorOpen: false,
+  editorContent: null,
+  hasUnsavedChanges: false,
+  editorError: null,
 
   // Actions
   loadRepo: () => {
@@ -257,6 +301,61 @@ export const useStore = create<RepoState>((set, get) => ({
   // Settings actions
   setShowSettings: (showSettings) => set({ showSettings }),
   setControlSettings: (controlSettings) => set({ controlSettings }),
+
+  // Landing actions
+  setLandingState: (landingState) => set({ landingState }),
+  setLandingTarget: (landingTarget) => set({ landingTarget }),
+  setNearestPlanet: (nearestPlanet) => set({ nearestPlanet }),
+
+  initiateLanding: (planet) => {
+    set({
+      landingState: 'landed',
+      landingTarget: planet,
+      cameraMode: 'orbit', // Exit fly mode when landing
+      isEditorOpen: true, // Open the editor
+      editorContent: null, // Will be loaded by Editor component
+      hasUnsavedChanges: false,
+      editorError: null,
+    })
+  },
+
+  completeTakeoff: () => {
+    set({
+      landingState: 'flying',
+      landingTarget: null,
+      nearestPlanet: null,
+      isEditorOpen: false,
+      editorContent: null,
+      hasUnsavedChanges: false,
+      editorError: null,
+      cameraMode: 'fly', // Return to fly mode after takeoff
+    })
+  },
+
+  // Editor actions
+  openEditor: (content) => set({
+    isEditorOpen: true,
+    editorContent: content,
+    hasUnsavedChanges: false,
+    editorError: null,
+  }),
+
+  closeEditor: () => set({
+    isEditorOpen: false,
+    editorContent: null,
+    hasUnsavedChanges: false,
+    editorError: null,
+    landingState: 'flying',
+    landingTarget: null,
+  }),
+
+  setEditorContent: (editorContent) => set({
+    editorContent,
+    hasUnsavedChanges: true,
+  }),
+
+  setEditorError: (editorError) => set({ editorError }),
+  setHasUnsavedChanges: (hasUnsavedChanges) => set({ hasUnsavedChanges }),
 }))
 
 // Selector hooks for performance
@@ -277,3 +376,14 @@ export const useHistoryState = () =>
     playbackSpeed: s.playbackSpeed,
     commits: s.commits,
   }))
+
+// Landing state selectors
+export const useLandingState = () => useStore((s) => s.landingState)
+export const useLandingTarget = () => useStore((s) => s.landingTarget)
+export const useNearestPlanet = () => useStore((s) => s.nearestPlanet)
+
+// Editor state selectors - use individual selectors to avoid infinite loops
+export const useIsEditorOpen = () => useStore((s) => s.isEditorOpen)
+export const useEditorContent = () => useStore((s) => s.editorContent)
+export const useEditorHasUnsavedChanges = () => useStore((s) => s.hasUnsavedChanges)
+export const useEditorError = () => useStore((s) => s.editorError)

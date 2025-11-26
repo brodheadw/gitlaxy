@@ -63,14 +63,15 @@ export const PERFORMANCE = {
   },
 
   // Stars controls - using multiple layers to fill volume (scaled 5x for immersive universe)
+  // Note: drei Stars spawns from `radius` to `radius + depth`
   stars: {
-    // Inner layer
-    innerRadius: 50000,
-    innerDepth: 100000,   // 0 to 100000 units
+    // Inner layer - close stars visible from camera
+    innerRadius: 100,      // Start very close
+    innerDepth: 100000,    // Extend to 100000 units
     innerCount: 10000,
-    // Outer layer
-    outerRadius: 250000,
-    outerDepth: 300000,   // 100000 to 400000 units
+    // Outer layer - distant backdrop
+    outerRadius: 100000,
+    outerDepth: 400000,    // Extend to 500000 units
     outerCount: 15000,
     // Shared settings
     size: 8,

@@ -7,7 +7,11 @@
       "Bash(cat:*)",
       "Bash(find:*)",
       "Bash(git log:*)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(npm install:*)",
+      "Bash(echo:*)",
+      "Bash(pkill:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

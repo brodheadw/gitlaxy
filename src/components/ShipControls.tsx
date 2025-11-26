@@ -52,10 +52,33 @@ const FLIGHT_KEYS = new Set([
 
 export default function ShipControls({ controlSettings }: ShipControlsProps) {
   const { camera, gl } = useThree()
-  const { cameraMode, setCameraMode, keysPressed, setKeyPressed, updateFlightState, showSettings } = useStore()
+  const {
+    cameraMode,
+    setCameraMode,
+    keysPressed,
+    setKeyPressed,
+    updateFlightState,
+    showSettings,
+    landingState,
+    nearestPlanet,
+    initiateLanding,
+  } = useStore()
 
   // Create flight config from control settings
   const cfg = createFlightConfig(controlSettings)
+
+  // Use refs for landing state to avoid effect re-runs releasing pointer lock
+  const landingStateRef = useRef(landingState)
+  const nearestPlanetRef = useRef(nearestPlanet)
+
+  // Keep refs updated
+  useEffect(() => {
+    landingStateRef.current = landingState
+  }, [landingState])
+
+  useEffect(() => {
+    nearestPlanetRef.current = nearestPlanet
+  }, [nearestPlanet])
 
   // Flight state
   const currentSpeed = useRef(cfg.minSpeed)
@@ -120,6 +143,20 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
         return
       }
 
+      // E key - initiate landing when approaching a planet
+      if (event.code === 'KeyE') {
+        event.preventDefault()
+        // Use refs to get current values without triggering effect re-runs
+        if (landingStateRef.current === 'approaching' && nearestPlanetRef.current) {
+          // Exit pointer lock before landing
+          if (document.pointerLockElement === gl.domElement) {
+            document.exitPointerLock()
+          }
+          initiateLanding(nearestPlanetRef.current.node)
+        }
+        return
+      }
+
       // Register flight control keys
       if (FLIGHT_KEYS.has(event.code)) {
         event.preventDefault()
@@ -133,30 +170,21 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
       }
     }
 
-    const onPointerLockChange = () => {
-      if (document.pointerLockElement !== gl.domElement) {
-        document.body.style.cursor = 'default'
-      }
-    }
-
     document.addEventListener('mousemove', onMouseMove)
     document.addEventListener('keydown', onKeyDown)
     document.addEventListener('keyup', onKeyUp)
-    document.addEventListener('pointerlockchange', onPointerLockChange)
     gl.domElement.addEventListener('click', onClick)
 
     return () => {
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('keydown', onKeyDown)
       document.removeEventListener('keyup', onKeyUp)
-      document.removeEventListener('pointerlockchange', onPointerLockChange)
       gl.domElement.removeEventListener('click', onClick)
       if (document.pointerLockElement === gl.domElement) {
         document.exitPointerLock()
       }
-      document.body.style.cursor = 'default'
     }
-  }, [camera, gl.domElement, cameraMode, setCameraMode, setKeyPressed, showSettings])
+  }, [camera, gl.domElement, cameraMode, setCameraMode, setKeyPressed, showSettings, initiateLanding])
 
   useFrame((_, delta) => {
     if (cameraMode !== 'fly') return
@@ -172,7 +200,7 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
     const isBraking = keysPressed.has('KeyS') || keysPressed.has('ArrowDown')
     const isRollingLeft = keysPressed.has('KeyA') || keysPressed.has('ArrowLeft')
     const isRollingRight = keysPressed.has('KeyD') || keysPressed.has('ArrowRight')
-    const wantsBoost = keysPressed.has('ShiftLeft') || keysPressed.has('ShiftRight') || keysPressed.has('KeyE')
+    const wantsBoost = keysPressed.has('ShiftLeft') || keysPressed.has('ShiftRight')
 
     // Update boost state
     isBoosting.current = wantsBoost && isThrusting

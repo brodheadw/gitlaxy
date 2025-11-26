@@ -1,4 +1,4 @@
-import { useStore } from '../store'
+import { useStore, useLandingState, useNearestPlanet } from '../store'
 import type { ShipType } from '../store'
 import { SHIP_INFO } from './Spaceship'
 import './HUD.css'
@@ -29,6 +29,9 @@ export default function HUD() {
     showSettings,
     setShowSettings,
   } = useStore()
+
+  const landingState = useLandingState()
+  const nearestPlanet = useNearestPlanet()
 
   const currentCommit = commits[historyIndex]
 
@@ -180,13 +183,38 @@ export default function HUD() {
         )}
       </div>
 
+      {/* Landed indicator */}
+      {landingState === 'landed' && nearestPlanet && (
+        <div className="landed-indicator">
+          <span className="landed-icon">🪐</span>
+          <span className="landed-text">Landed on</span>
+          <span className="landed-planet">{nearestPlanet.node.name}</span>
+        </div>
+      )}
+
+      {/* Landing prompt (when approaching a planet in fly mode) */}
+      {cameraMode === 'fly' && landingState === 'approaching' && nearestPlanet && (
+        <div className="landing-prompt">
+          <div className="landing-target">
+            <span className="planet-icon">🪐</span>
+            <span className="planet-name">{nearestPlanet.node.name}</span>
+          </div>
+          <div className="landing-distance">
+            {Math.round(nearestPlanet.distance)} units away
+          </div>
+          <div className="landing-action">
+            <kbd>E</kbd> Land &amp; Edit
+          </div>
+        </div>
+      )}
+
       {/* Speed indicator (when in fly mode) */}
       {cameraMode === 'fly' && (
         <div className="speed-indicator">
           <div className="speed-bar-container">
             <div
               className={`speed-bar ${flightState.isBoosting ? 'boosting' : ''} ${flightState.speed < 0 ? 'reverse' : ''}`}
-              style={{ width: `${Math.min(Math.abs(flightState.speed) / 3000 * 100, 100)}%` }}
+              style={{ width: `${Math.min(Math.abs(flightState.speed) / 15000 * 100, 100)}%` }}
             />
           </div>
           <div className="speed-value">

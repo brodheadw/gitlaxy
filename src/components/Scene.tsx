@@ -8,6 +8,13 @@ import SpaceBackground from './SpaceBackground'
 import Spaceship from './Spaceship'
 import { FlyCamera } from './ShipControls'
 import { PERFORMANCE } from '../config/performance'
+import { useProximityDetection } from '../hooks/useProximityDetection'
+
+// Component to run proximity detection
+function ProximityDetector() {
+  useProximityDetection()
+  return null
+}
 
 export default function Scene() {
   const { cameraMode, controlSettings } = useStore()
@@ -50,6 +57,9 @@ export default function Scene() {
 
       {/* Spaceship visible in fly mode */}
       <Spaceship />
+
+      {/* Proximity detection for landing */}
+      <ProximityDetector />
 
       {/* Camera controls (5x scale) */}
       {cameraMode === 'orbit' && (

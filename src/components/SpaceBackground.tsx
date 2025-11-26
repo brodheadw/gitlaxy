@@ -278,53 +278,53 @@ function VolumetricNebula({ position, color, secondaryColor, size, seed }: {
 }
 
 export default function SpaceBackground() {
-  // Volumetric nebula regions - spread throughout entire space with 3D distribution
+  // Volumetric nebula regions - spread throughout entire space with 3D distribution (5x scale)
   const nebulaRegions = useMemo(() => {
     const regions = [
-    // Core region nebulae - some above and below
-    { position: [0, 3000, -2000] as [number, number, number], color: '#9933ff', secondaryColor: '#ff33cc', size: 4000, seed: 1 },
-    { position: [-2000, -4000, 1000] as [number, number, number], color: '#ff3366', secondaryColor: '#ff9933', size: 3500, seed: 2 },
-    { position: [2500, 5000, -500] as [number, number, number], color: '#00ffcc', secondaryColor: '#33ccff', size: 3800, seed: 3 },
+    // Core region nebulae - some above and below (5x scale)
+    { position: [0, 15000, -10000] as [number, number, number], color: '#9933ff', secondaryColor: '#ff33cc', size: 20000, seed: 1 },
+    { position: [-10000, -20000, 5000] as [number, number, number], color: '#ff3366', secondaryColor: '#ff9933', size: 17500, seed: 2 },
+    { position: [12500, 25000, -2500] as [number, number, number], color: '#00ffcc', secondaryColor: '#33ccff', size: 19000, seed: 3 },
 
-    // Inner sphere (5000-8000 units out) - distributed in 3D
-    { position: [-5000, 6000, -4000] as [number, number, number], color: '#ff6600', secondaryColor: '#ffcc00', size: 4500, seed: 4 },
-    { position: [6000, -7000, 3000] as [number, number, number], color: '#0099ff', secondaryColor: '#00ffcc', size: 4200, seed: 5 },
-    { position: [3000, -5000, -6000] as [number, number, number], color: '#cc66ff', secondaryColor: '#ff3366', size: 3800, seed: 6 },
-    { position: [-4000, 8000, 5000] as [number, number, number], color: '#33ffcc', secondaryColor: '#6699ff', size: 4000, seed: 7 },
+    // Inner sphere (25000-40000 units out) - distributed in 3D (5x scale)
+    { position: [-25000, 30000, -20000] as [number, number, number], color: '#ff6600', secondaryColor: '#ffcc00', size: 22500, seed: 4 },
+    { position: [30000, -35000, 15000] as [number, number, number], color: '#0099ff', secondaryColor: '#00ffcc', size: 21000, seed: 5 },
+    { position: [15000, -25000, -30000] as [number, number, number], color: '#cc66ff', secondaryColor: '#ff3366', size: 19000, seed: 6 },
+    { position: [-20000, 40000, 25000] as [number, number, number], color: '#33ffcc', secondaryColor: '#6699ff', size: 20000, seed: 7 },
 
-    // Mid sphere (10000-15000 units out)
-    { position: [-12000, 10000, -8000] as [number, number, number], color: '#ff9966', secondaryColor: '#cc33ff', size: 5500, seed: 8 },
-    { position: [10000, -12000, 10000] as [number, number, number], color: '#66ccff', secondaryColor: '#ff66cc', size: 5200, seed: 9 },
-    { position: [14000, 8000, -5000] as [number, number, number], color: '#ff6699', secondaryColor: '#ffcc66', size: 4800, seed: 10 },
-    { position: [-8000, -10000, 12000] as [number, number, number], color: '#ffcc00', secondaryColor: '#ff6633', size: 4500, seed: 11 },
-    { position: [5000, 15000, 8000] as [number, number, number], color: '#99ff66', secondaryColor: '#ccff99', size: 5000, seed: 20 },
-    { position: [-10000, -8000, -10000] as [number, number, number], color: '#ff66aa', secondaryColor: '#ffaacc', size: 4800, seed: 21 },
+    // Mid sphere (50000-75000 units out) (5x scale)
+    { position: [-60000, 50000, -40000] as [number, number, number], color: '#ff9966', secondaryColor: '#cc33ff', size: 27500, seed: 8 },
+    { position: [50000, -60000, 50000] as [number, number, number], color: '#66ccff', secondaryColor: '#ff66cc', size: 26000, seed: 9 },
+    { position: [70000, 40000, -25000] as [number, number, number], color: '#ff6699', secondaryColor: '#ffcc66', size: 24000, seed: 10 },
+    { position: [-40000, -50000, 60000] as [number, number, number], color: '#ffcc00', secondaryColor: '#ff6633', size: 22500, seed: 11 },
+    { position: [25000, 75000, 40000] as [number, number, number], color: '#99ff66', secondaryColor: '#ccff99', size: 25000, seed: 20 },
+    { position: [-50000, -40000, -50000] as [number, number, number], color: '#ff66aa', secondaryColor: '#ffaacc', size: 24000, seed: 21 },
 
-    // Outer sphere (18000-25000 units out) - larger nebulae at the edges
-    { position: [-20000, 15000, -12000] as [number, number, number], color: '#00ff99', secondaryColor: '#33ccff', size: 6500, seed: 12 },
-    { position: [22000, -18000, 8000] as [number, number, number], color: '#ff3399', secondaryColor: '#9966ff', size: 6200, seed: 13 },
-    { position: [8000, 20000, -18000] as [number, number, number], color: '#6699ff', secondaryColor: '#99ccff', size: 5800, seed: 14 },
-    { position: [-15000, -20000, 15000] as [number, number, number], color: '#ff6644', secondaryColor: '#ffaa66', size: 6000, seed: 15 },
-    { position: [18000, 12000, 18000] as [number, number, number], color: '#66ffcc', secondaryColor: '#aaffee', size: 5500, seed: 22 },
-    { position: [-18000, 18000, -5000] as [number, number, number], color: '#ff99cc', secondaryColor: '#ffccee', size: 5800, seed: 23 },
+    // Outer sphere (90000-125000 units out) - larger nebulae at the edges (5x scale)
+    { position: [-100000, 75000, -60000] as [number, number, number], color: '#00ff99', secondaryColor: '#33ccff', size: 32500, seed: 12 },
+    { position: [110000, -90000, 40000] as [number, number, number], color: '#ff3399', secondaryColor: '#9966ff', size: 31000, seed: 13 },
+    { position: [40000, 100000, -90000] as [number, number, number], color: '#6699ff', secondaryColor: '#99ccff', size: 29000, seed: 14 },
+    { position: [-75000, -100000, 75000] as [number, number, number], color: '#ff6644', secondaryColor: '#ffaa66', size: 30000, seed: 15 },
+    { position: [90000, 60000, 90000] as [number, number, number], color: '#66ffcc', secondaryColor: '#aaffee', size: 27500, seed: 22 },
+    { position: [-90000, 90000, -25000] as [number, number, number], color: '#ff99cc', secondaryColor: '#ffccee', size: 29000, seed: 23 },
 
-    // Far outer nebulae (28000-40000 units) - at the edges of visible space
-    { position: [-30000, 25000, -15000] as [number, number, number], color: '#9966ff', secondaryColor: '#cc99ff', size: 8000, seed: 16 },
-    { position: [28000, -25000, -20000] as [number, number, number], color: '#66ffcc', secondaryColor: '#99ffdd', size: 7500, seed: 17 },
-    { position: [0, 35000, 20000] as [number, number, number], color: '#ff9999', secondaryColor: '#ffcccc', size: 7800, seed: 18 },
-    { position: [-25000, -30000, -25000] as [number, number, number], color: '#99ccff', secondaryColor: '#cceeff', size: 7200, seed: 19 },
-    { position: [35000, 10000, 10000] as [number, number, number], color: '#ffcc66', secondaryColor: '#ffee99', size: 7000, seed: 24 },
-    { position: [-10000, -35000, 30000] as [number, number, number], color: '#cc99ff', secondaryColor: '#eeccff', size: 7500, seed: 25 },
-    { position: [20000, 30000, -30000] as [number, number, number], color: '#99ffcc', secondaryColor: '#ccffee', size: 8000, seed: 26 },
-    { position: [-35000, 5000, 25000] as [number, number, number], color: '#ff6699', secondaryColor: '#ff99bb', size: 7200, seed: 27 },
+    // Far outer nebulae (140000-200000 units) - at the edges of visible space (5x scale)
+    { position: [-150000, 125000, -75000] as [number, number, number], color: '#9966ff', secondaryColor: '#cc99ff', size: 40000, seed: 16 },
+    { position: [140000, -125000, -100000] as [number, number, number], color: '#66ffcc', secondaryColor: '#99ffdd', size: 37500, seed: 17 },
+    { position: [0, 175000, 100000] as [number, number, number], color: '#ff9999', secondaryColor: '#ffcccc', size: 39000, seed: 18 },
+    { position: [-125000, -150000, -125000] as [number, number, number], color: '#99ccff', secondaryColor: '#cceeff', size: 36000, seed: 19 },
+    { position: [175000, 50000, 50000] as [number, number, number], color: '#ffcc66', secondaryColor: '#ffee99', size: 35000, seed: 24 },
+    { position: [-50000, -175000, 150000] as [number, number, number], color: '#cc99ff', secondaryColor: '#eeccff', size: 37500, seed: 25 },
+    { position: [100000, 150000, -150000] as [number, number, number], color: '#99ffcc', secondaryColor: '#ccffee', size: 40000, seed: 26 },
+    { position: [-175000, 25000, 125000] as [number, number, number], color: '#ff6699', secondaryColor: '#ff99bb', size: 36000, seed: 27 },
 
-    // Extreme distance nebulae (40000+ units) - backdrop nebulae
-    { position: [0, -40000, 0] as [number, number, number], color: '#6666ff', secondaryColor: '#9999ff', size: 10000, seed: 28 },
-    { position: [0, 40000, 0] as [number, number, number], color: '#ff6666', secondaryColor: '#ff9999', size: 10000, seed: 29 },
-    { position: [40000, 0, 0] as [number, number, number], color: '#66ff66', secondaryColor: '#99ff99', size: 9000, seed: 30 },
-    { position: [-40000, 0, 0] as [number, number, number], color: '#ffff66', secondaryColor: '#ffff99', size: 9000, seed: 31 },
-    { position: [0, 0, 40000] as [number, number, number], color: '#66ffff', secondaryColor: '#99ffff', size: 9000, seed: 32 },
-    { position: [0, 0, -40000] as [number, number, number], color: '#ff66ff', secondaryColor: '#ff99ff', size: 9000, seed: 33 },
+    // Extreme distance nebulae (200000+ units) - backdrop nebulae (5x scale)
+    { position: [0, -200000, 0] as [number, number, number], color: '#6666ff', secondaryColor: '#9999ff', size: 50000, seed: 28 },
+    { position: [0, 200000, 0] as [number, number, number], color: '#ff6666', secondaryColor: '#ff9999', size: 50000, seed: 29 },
+    { position: [200000, 0, 0] as [number, number, number], color: '#66ff66', secondaryColor: '#99ff99', size: 45000, seed: 30 },
+    { position: [-200000, 0, 0] as [number, number, number], color: '#ffff66', secondaryColor: '#ffff99', size: 45000, seed: 31 },
+    { position: [0, 0, 200000] as [number, number, number], color: '#66ffff', secondaryColor: '#99ffff', size: 45000, seed: 32 },
+    { position: [0, 0, -200000] as [number, number, number], color: '#ff66ff', secondaryColor: '#ff99ff', size: 45000, seed: 33 },
     ]
 
     return regions.slice(0, Math.min(regions.length, PERFORMANCE.nebula.quantity.total))

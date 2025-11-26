@@ -622,3 +622,116 @@ kbd {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
+
+/* Landed indicator */
+.landed-indicator {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(78, 205, 196, 0.4);
+  border-radius: 20px;
+  padding: 10px 20px;
+  backdrop-filter: blur(10px);
+}
+
+.landed-icon {
+  font-size: 20px;
+}
+
+.landed-text {
+  font-size: 12px;
+  color: #888;
+}
+
+.landed-planet {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4ecdc4;
+}
+
+/* Landing prompt */
+.landing-prompt {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid rgba(78, 205, 196, 0.6);
+  border-radius: 16px;
+  padding: 20px 32px;
+  backdrop-filter: blur(10px);
+  text-align: center;
+  animation: landingPulse 2s ease-in-out infinite;
+  box-shadow: 0 0 30px rgba(78, 205, 196, 0.3);
+  pointer-events: none; /* Don't interfere with ship controls */
+}
+
+@keyframes landingPulse {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(78, 205, 196, 0.3);
+    border-color: rgba(78, 205, 196, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(78, 205, 196, 0.5);
+    border-color: rgba(78, 205, 196, 0.9);
+  }
+}
+
+.landing-target {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.planet-icon {
+  font-size: 28px;
+}
+
+.planet-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.landing-distance {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 16px;
+}
+
+.landing-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #4ecdc4;
+}
+
+.landing-action kbd {
+  font-size: 16px;
+  padding: 6px 14px;
+  background: rgba(78, 205, 196, 0.2);
+  border-color: rgba(78, 205, 196, 0.5);
+  color: #4ecdc4;
+  animation: keyPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes keyPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(78, 205, 196, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(78, 205, 196, 0.5);
+  }
+}

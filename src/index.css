@@ -14,3 +14,22 @@ html, body, #root {
 canvas {
   display: block;
 }
+
+/* Force hide cursor during fly mode */
+body.fly-mode,
+body.fly-mode *,
+body.fly-mode *::before,
+body.fly-mode *::after {
+  cursor: none !important;
+}
+
+body.fly-mode canvas {
+  pointer-events: auto !important;
+}
+
+/* Disable all HUD interactions during fly mode so cursor can't appear */
+body.fly-mode .hud,
+body.fly-mode .hud * {
+  pointer-events: none !important;
+  cursor: none !important;
+}
