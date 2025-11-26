@@ -52,7 +52,7 @@ const FLIGHT_KEYS = new Set([
 
 export default function ShipControls({ controlSettings }: ShipControlsProps) {
   const { camera, gl } = useThree()
-  const { cameraMode, setCameraMode, keysPressed, setKeyPressed, updateFlightState } = useStore()
+  const { cameraMode, setCameraMode, keysPressed, setKeyPressed, updateFlightState, showSettings } = useStore()
 
   // Create flight config from control settings
   const cfg = createFlightConfig(controlSettings)
@@ -112,7 +112,11 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
         if (document.pointerLockElement === gl.domElement) {
           document.exitPointerLock()
         }
-        setCameraMode('orbit')
+        // Only exit fly mode if settings menu is not open
+        // (let SettingsMenu handle closing itself first)
+        if (!showSettings) {
+          setCameraMode('orbit')
+        }
         return
       }
 
@@ -152,7 +156,7 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
       }
       document.body.style.cursor = 'default'
     }
-  }, [camera, gl.domElement, cameraMode, setCameraMode, setKeyPressed])
+  }, [camera, gl.domElement, cameraMode, setCameraMode, setKeyPressed, showSettings])
 
   useFrame((_, delta) => {
     if (cameraMode !== 'fly') return
