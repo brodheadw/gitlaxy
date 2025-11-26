@@ -5,26 +5,31 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "mkdir -p public/draco && cp -r node_modules/three/examples/jsm/libs/draco/* public/draco/",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "kill-servers": "node scripts/kill-servers.js"
+    "kill-servers": "node scripts/kill-servers.js",
+    "optimize-model": "gltf-transform optimize \"public/Spacyship 3D Model.glb\" public/spaceship-optimized.glb --compress draco",
+    "postinstall": "mkdir -p public/draco && cp -r node_modules/three/examples/jsm/libs/draco/* public/draco/"
   },
   "dependencies": {
+    "@react-three/drei": "^10.0.6",
+    "@react-three/fiber": "^9.1.2",
+    "@react-three/postprocessing": "^3.0.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "@react-three/fiber": "^9.1.2",
-    "@react-three/drei": "^10.0.6",
-    "@react-three/postprocessing": "^3.0.4",
     "three": "^0.175.0",
     "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@gltf-transform/cli": "^4.2.1",
+    "@gltf-transform/functions": "^4.2.1",
     "@types/node": "^24.10.1",
-    "@types/three": "^0.175.0",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.175.0",
     "@vitejs/plugin-react": "^5.1.1",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",

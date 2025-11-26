@@ -1,11 +1,17 @@
 import { useGLTF } from '@react-three/drei'
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 import { useStore } from '../store'
 import type { ShipType } from '../store'
 import { PERFORMANCE } from '../config/performance'
 import { vector3Pool, resetAllPools } from '../utils/objectPool'
+
+// Configure Draco decoder path
+const dracoLoader = new DRACOLoader()
+dracoLoader.setDecoderPath('/draco/')
+dracoLoader.preload()
 
 // Ship configuration for exhaust animations
 interface ExhaustRefs {
@@ -389,7 +395,10 @@ function ExplorerShip({ exhaustRefs, isMoving }: { exhaustRefs: ExhaustRefs; isM
 }
 
 function CustomShip() {
-  const { scene } = useGLTF('/Spacyship 3D Model.glb')
+  const { scene } = useGLTF('/spaceship-optimized.glb', undefined, undefined, (loader) => {
+    // Configure the GLTFLoader to use our Draco loader
+    loader.setDRACOLoader(dracoLoader)
+  })
   // You might need to adjust the scale, position, and rotation of your model.
   return <primitive object={scene.clone()} scale={1} rotation={[0, -Math.PI / 2, 0]} />
 }
