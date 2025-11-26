@@ -2,6 +2,7 @@ import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { PERFORMANCE } from '../config/performance'
+import { createSeededRandom } from '../utils/random'
 
 // Individual animated wisp/tendril within a nebula
 function NebulaWisp({ position, color, size, seed }: {
@@ -65,10 +66,7 @@ function NebulaDust({ basePosition, color, count, spread, seed }: {
   const { positions, sizes } = useMemo(() => {
     const pos = new Float32Array(count * 3)
     const siz = new Float32Array(count)
-    const seeded = (n: number) => {
-      const x = Math.sin(seed * 1337 + n) * 10000
-      return x - Math.floor(x)
-    }
+    const seeded = createSeededRandom(seed, 1337)
 
     for (let i = 0; i < count; i++) {
       const theta = seeded(i) * Math.PI * 2
@@ -135,10 +133,7 @@ function VolumetricNebula({ position, color, secondaryColor, size, seed }: {
   const cfg = PERFORMANCE.nebula
 
   // Seeded random for consistent generation
-  const seededRandom = (n: number) => {
-    const x = Math.sin(seed * 9999 + n) * 10000
-    return x - Math.floor(x)
-  }
+  const seededRandom = createSeededRandom(seed, 9999)
 
   // Create multiple blob positions for this nebula region
   const blobs = useMemo(() => {

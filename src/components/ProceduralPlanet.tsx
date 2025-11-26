@@ -2,6 +2,7 @@ import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { PERFORMANCE } from '../config/performance'
+import { createSeededRandom, noise, fbm } from '../utils/random'
 
 // Create procedural planet texture
 function createPlanetTexture(
@@ -19,32 +20,8 @@ function createPlanetTexture(
   const baseScale = textureCfg.scale
   const baseOctaves = textureCfg.octaves
 
-  // Seeded random function
-  const random = (n: number) => {
-    const x = Math.sin(seed * 9999 + n) * 10000
-    return x - Math.floor(x)
-  }
-
-  // Noise function
-  const noise = (x: number, y: number, scale: number = textureCfg.scale) => {
-    const nx = Math.floor(x * scale) + seed
-    const ny = Math.floor(y * scale)
-    return random(nx * 57 + ny * 131)
-  }
-
-  // Fractal noise
-  const fbm = (x: number, y: number, octaves: number = textureCfg.octaves) => {
-    let value = 0
-    let amplitude = 0.5
-    let frequency = 1
-
-    for (let i = 0; i < octaves; i++) {
-      value += amplitude * noise(x * frequency, y * frequency, textureCfg.scale)
-      amplitude *= 0.5
-      frequency *= 2
-    }
-    return value
-  }
+  // Create seeded random function with multiplier 9999
+  const random = createSeededRandom(seed, 9999)
 
   // Draw based on planet type
   for (let y = 0; y < canvas.height; y++) {
@@ -63,8 +40,8 @@ function createPlanetTexture(
 
       if (planetType === 0) {
         // Rocky planet with continents
-        const continents = fbm(sx * baseScale * 0.25, sy * baseScale * 0.25, baseOctaves)
-        const mountains = fbm(sx * baseScale * 0.5, sz * baseScale * 0.5, Math.max(1, baseOctaves - 2)) * 0.3
+        const continents = fbm(sx * baseScale * 0.25, sy * baseScale * 0.25, random, baseScale, baseOctaves, seed)
+        const mountains = fbm(sx * baseScale * 0.5, sz * baseScale * 0.5, random, baseScale, Math.max(1, baseOctaves - 2), seed) * 0.3
         const terrain = continents + mountains
 
         if (terrain < 0.45) {
@@ -98,8 +75,8 @@ function createPlanetTexture(
         }
       } else if (planetType === 1) {
         // Gas giant with bands
-        const bands = Math.sin(sy * 12 + fbm(sx * baseScale * 0.15, sz * baseScale * 0.15, Math.max(1, baseOctaves - 2)) * 2) * 0.5 + 0.5
-        const storms = fbm(sx * baseScale * 0.4, sz * baseScale * 0.4 + sy, Math.max(1, baseOctaves - 1))
+        const bands = Math.sin(sy * 12 + fbm(sx * baseScale * 0.15, sz * baseScale * 0.15, random, baseScale, Math.max(1, baseOctaves - 2), seed) * 2) * 0.5 + 0.5
+        const storms = fbm(sx * baseScale * 0.4, sz * baseScale * 0.4 + sy, random, baseScale, Math.max(1, baseOctaves - 1), seed)
 
         r = baseColor.r * (0.7 + bands * 0.4) + storms * 0.1
         g = secondaryColor.g * (0.6 + bands * 0.5)
@@ -115,8 +92,8 @@ function createPlanetTexture(
         }
       } else if (planetType === 2) {
         // Ice planet
-        const ice = fbm(sx * baseScale * 0.25, sy * baseScale * 0.25, Math.max(1, baseOctaves - 1))
-        const cracks = fbm(sx * baseScale, sz * baseScale, Math.max(1, baseOctaves - 3))
+        const ice = fbm(sx * baseScale * 0.25, sy * baseScale * 0.25, random, baseScale, Math.max(1, baseOctaves - 1), seed)
+        const cracks = fbm(sx * baseScale, sz * baseScale, random, baseScale, Math.max(1, baseOctaves - 3), seed)
 
         r = baseColor.r * 0.9 + ice * 0.1
         g = baseColor.g * 0.95 + ice * 0.1
@@ -130,8 +107,8 @@ function createPlanetTexture(
         }
       } else if (planetType === 3) {
         // Lava planet
-        const tectonics = fbm(sx * baseScale * 0.25 + seed * 0.01, sy * baseScale * 0.25, baseOctaves)
-        const heat = fbm(sx * baseScale * 0.5, sz * baseScale * 0.5, Math.max(1, baseOctaves - 2))
+        const tectonics = fbm(sx * baseScale * 0.25 + seed * 0.01, sy * baseScale * 0.25, random, baseScale, baseOctaves, seed)
+        const heat = fbm(sx * baseScale * 0.5, sz * baseScale * 0.5, random, baseScale, Math.max(1, baseOctaves - 2), seed)
 
         if (tectonics > 0.45) {
           // Lava flows
@@ -146,8 +123,8 @@ function createPlanetTexture(
         }
       } else {
         // Ocean planet
-        const waves = fbm(sx * baseScale * 0.35, sz * baseScale * 0.35, Math.max(1, baseOctaves - 1))
-        const depth = fbm(sx * baseScale * 0.15, sy * baseScale * 0.15, Math.max(1, baseOctaves - 2))
+        const waves = fbm(sx * baseScale * 0.35, sz * baseScale * 0.35, random, baseScale, Math.max(1, baseOctaves - 1), seed)
+        const depth = fbm(sx * baseScale * 0.15, sy * baseScale * 0.15, random, baseScale, Math.max(1, baseOctaves - 2), seed)
 
         r = secondaryColor.r * (0.4 + depth * 0.3)
         g = baseColor.g * (0.6 + waves * 0.2)
@@ -182,28 +159,8 @@ function createCloudTexture(seed: number): THREE.CanvasTexture {
   const baseScale = textureCfg.scale
   const baseOctaves = textureCfg.octaves
 
-  const random = (n: number) => {
-    const x = Math.sin(seed * 7777 + n) * 10000
-    return x - Math.floor(x)
-  }
-
-  const noise = (x: number, y: number, scale: number = baseScale) => {
-    const nx = Math.floor(x * scale) + seed
-    const ny = Math.floor(y * scale)
-    return random(nx * 57 + ny * 131)
-  }
-
-  const fbm = (x: number, y: number, octaves: number = baseOctaves) => {
-    let value = 0
-    let amplitude = 0.5
-    let frequency = 1
-    for (let i = 0; i < octaves; i++) {
-      value += amplitude * noise(x * frequency, y * frequency, baseScale)
-      amplitude *= 0.5
-      frequency *= 2
-    }
-    return value
-  }
+  // Create seeded random function with multiplier 7777
+  const random = createSeededRandom(seed, 7777)
 
   ctx.fillStyle = 'rgba(0, 0, 0, 0)'
   ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -219,7 +176,7 @@ function createCloudTexture(seed: number): THREE.CanvasTexture {
       const sy = Math.cos(phi)
       const sz = Math.sin(phi) * Math.sin(theta)
 
-      const clouds = fbm(sx * baseScale * 0.25, sz * baseScale * 0.25 + sy, baseOctaves)
+      const clouds = fbm(sx * baseScale * 0.25, sz * baseScale * 0.25 + sy, random, baseScale, baseOctaves, seed)
 
       if (clouds > 0.5) {
         const alpha = Math.min((clouds - 0.5) * 3, 0.8)

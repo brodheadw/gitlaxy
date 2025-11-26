@@ -206,37 +206,10 @@ export function getRepoInfo(): RepoInfo {
   }
 }
 
-// Count total files in a tree
-export function countFiles(node: RepoNode): number {
-  if (node.type === 'file') return 1
-  return node.children.reduce((sum, child) => sum + countFiles(child), 0)
-}
-
-// Count total folders in a tree
-export function countFolders(node: RepoNode): number {
-  if (node.type === 'file') return 0
-  return 1 + node.children.reduce((sum, child) => sum + countFolders(child), 0)
-}
-
 // Flatten tree to array of all nodes
 export function flattenTree(node: RepoNode): RepoNode[] {
   if (node.type === 'file') return [node]
   return [node, ...node.children.flatMap(flattenTree)]
-}
-
-// Get file by path
-export function getNodeByPath(root: FolderNode, path: string): RepoNode | null {
-  if (root.path === path) return root
-
-  for (const child of root.children) {
-    if (child.path === path) return child
-    if (child.type === 'folder') {
-      const found = getNodeByPath(child, path)
-      if (found) return found
-    }
-  }
-
-  return null
 }
 
 // Get parent folder path

@@ -201,7 +201,7 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
 }) {
   const planetRef = useRef<THREE.Group>(null)
   const orbitUpdateCounter = useRef(0)
-  const [hovered, setHovered] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
   const { selectNode, hoverNode, selectedNode } = useStore()
 
   const color = useMemo(() => new THREE.Color(getColorForExtension(file.extension)), [file.extension])
@@ -236,12 +236,12 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
         }}
         onPointerOver={(e) => {
           e.stopPropagation()
-          setHovered(true)
+          setIsHovered(true)
           hoverNode(file)
           document.body.style.cursor = 'pointer'
         }}
         onPointerOut={() => {
-          setHovered(false)
+          setIsHovered(false)
           hoverNode(null)
           document.body.style.cursor = 'default'
         }}
@@ -259,7 +259,7 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
       />
 
       {/* Selection indicator */}
-      {(isSelected || hovered) && (
+      {(isSelected || isHovered) && (
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <ringGeometry args={[baseSize * cfg.selectionRing.innerScale, baseSize * cfg.selectionRing.outerScale, cfg.geometry.selectionRingDetail]} />
           <meshBasicMaterial
@@ -273,7 +273,7 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
       )}
 
       {/* Label - only show on hover */}
-      {hovered && (
+      {isHovered && (
         <Html
           position={[0, baseSize * cfg.visual.labelOffset + cfg.visual.labelExtraOffset, 0]}
           center

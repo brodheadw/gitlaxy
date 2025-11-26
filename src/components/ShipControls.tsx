@@ -295,22 +295,6 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
   return null
 }
 
-// Hook to expose flight state for HUD/ship visualization
-export function useFlightState() {
-  const defaultConfig = createFlightConfig()
-  const speedRef = useRef(defaultConfig.minSpeed)
-  const boostRef = useRef(false)
-  const yawRef = useRef(0)
-  const bankRef = useRef(0)
-
-  return {
-    speed: speedRef.current,
-    isBoosting: boostRef.current,
-    yawVelocity: yawRef.current,
-    bankAngle: bankRef.current,
-  }
-}
-
 // Combined ship controller component
 export function FlyCamera(props: ShipControlsProps) {
   return <ShipControls {...props} />
