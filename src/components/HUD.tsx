@@ -26,6 +26,8 @@ export default function HUD() {
     selectedShip,
     setSelectedShip,
     flightState,
+    showSettings,
+    setShowSettings,
   } = useStore()
 
   const currentCommit = commits[historyIndex]
@@ -86,6 +88,13 @@ export default function HUD() {
               🚀 Fly
             </button>
           </div>
+
+          <button
+            className={`settings-btn ${showSettings ? 'active' : ''}`}
+            onClick={() => setShowSettings(true)}
+          >
+            ⚙ Settings
+          </button>
         </div>
       </div>
 

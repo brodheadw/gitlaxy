@@ -59,6 +59,7 @@
 .hud-controls {
   display: flex;
   gap: 16px;
+  align-items: center;
 }
 
 .control-group {
@@ -89,6 +90,35 @@
 .hud-btn.active {
   background: rgba(78, 205, 196, 0.2);
   color: #4ecdc4;
+}
+
+.settings-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
+}
+
+.settings-btn:hover {
+  background: rgba(78, 205, 196, 0.15);
+  border-color: rgba(78, 205, 196, 0.5);
+  color: #4ecdc4;
+}
+
+.settings-btn.active {
+  background: rgba(78, 205, 196, 0.25);
+  border-color: rgba(78, 205, 196, 0.8);
+  color: #4ecdc4;
+  box-shadow: 0 0 18px rgba(78, 205, 196, 0.35);
 }
 
 /* Bottom left - controls help */

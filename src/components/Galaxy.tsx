@@ -3,6 +3,7 @@ import { useStore } from '../store'
 import type { FolderNode } from '../types'
 import SolarSystem, { countDescendants } from './SolarSystem'
 import * as THREE from 'three'
+import { PERFORMANCE } from '../config/performance'
 
 interface SystemData {
   folder: FolderNode
@@ -84,7 +85,7 @@ function Leyline({ start, end, parentDepth }: {
     mid.y += (endVec.distanceTo(startVec) * 0.05) // Slight arc
 
     const curve = new THREE.QuadraticBezierCurve3(startVec, mid, endVec)
-    return curve.getPoints(50)
+    return curve.getPoints(PERFORMANCE.connections.curvePoints)
   }, [start, end])
 
   const geometry = useMemo(() => {

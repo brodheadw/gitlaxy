@@ -7,24 +7,32 @@ import Galaxy from './Galaxy'
 import SpaceBackground from './SpaceBackground'
 import Spaceship from './Spaceship'
 import { FlyCamera } from './ShipControls'
+import { PERFORMANCE } from '../config/performance'
 
 export default function Scene() {
-  const { cameraMode } = useStore()
+  const { cameraMode, controlSettings } = useStore()
 
   return (
     <>
       {/* Ambient space lighting - very subtle */}
-      <ambientLight intensity={0.05} />
+      <ambientLight intensity={PERFORMANCE.lighting.ambient} />
 
       {/* Distant sun-like light source */}
       <directionalLight
         position={[5000, 3000, 2000]}
-        intensity={0.3}
+        intensity={PERFORMANCE.lighting.directional}
         color="#fff8e7"
       />
 
       {/* Stars - uses points that render at infinity, no depth issues */}
-      <Stars radius={50000} depth={80} count={15000} factor={8} saturation={0.1} fade={false} />
+      <Stars
+        radius={PERFORMANCE.stars.radius}
+        depth={PERFORMANCE.stars.depth}
+        count={PERFORMANCE.stars.count}
+        factor={PERFORMANCE.stars.size}
+        saturation={PERFORMANCE.stars.saturation}
+        fade={false}
+      />
 
       {/* Volumetric nebulae in the scene */}
       <SpaceBackground />
@@ -50,33 +58,43 @@ export default function Scene() {
       )}
 
       {cameraMode === 'fly' && (
-        <FlyCamera speed={3} damping={0.92} />
+        <FlyCamera controlSettings={controlSettings} />
       )}
 
       {/* NMS-style post-processing */}
-      <EffectComposer>
-        <Bloom
-          intensity={1.2}
-          luminanceThreshold={0.15}
-          luminanceSmoothing={0.9}
-          mipmapBlur
-        />
-        <ChromaticAberration
-          blendFunction={BlendFunction.NORMAL}
-          offset={new Vector2(0.0005, 0.0005)}
-          radialModulation={true}
-          modulationOffset={0.5}
-        />
-        <Vignette
-          offset={0.2}
-          darkness={0.5}
-          blendFunction={BlendFunction.NORMAL}
-        />
-        <Noise
-          blendFunction={BlendFunction.SOFT_LIGHT}
-          opacity={0.06}
-        />
-      </EffectComposer>
+      {PERFORMANCE.effects.enabled && (
+        <EffectComposer>
+          {PERFORMANCE.effects.bloom.enabled && (
+            <Bloom
+              intensity={PERFORMANCE.effects.bloom.intensity}
+              luminanceThreshold={PERFORMANCE.effects.bloom.threshold}
+              luminanceSmoothing={PERFORMANCE.effects.bloom.smoothing}
+              mipmapBlur={PERFORMANCE.effects.bloom.mipmap}
+            />
+          )}
+          {PERFORMANCE.effects.aberration.enabled && (
+            <ChromaticAberration
+              blendFunction={BlendFunction.NORMAL}
+              offset={new Vector2(PERFORMANCE.effects.aberration.offsetX, PERFORMANCE.effects.aberration.offsetY)}
+              radialModulation={PERFORMANCE.effects.aberration.radial}
+              modulationOffset={PERFORMANCE.effects.aberration.modulation}
+            />
+          )}
+          {PERFORMANCE.effects.vignette.enabled && (
+            <Vignette
+              offset={PERFORMANCE.effects.vignette.offset}
+              darkness={PERFORMANCE.effects.vignette.darkness}
+              blendFunction={BlendFunction.NORMAL}
+            />
+          )}
+          {PERFORMANCE.effects.noise.enabled && (
+            <Noise
+              blendFunction={BlendFunction.SOFT_LIGHT}
+              opacity={PERFORMANCE.effects.noise.opacity}
+            />
+          )}
+        </EffectComposer>
+      )}
     </>
   )
 }

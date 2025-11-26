@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { FolderNode, GitCommit, RepoInfo, RepoNode, LayoutNode } from '../types'
 import { createDemoRepo, createDemoCommits, getRepoInfo } from '../utils/gitParser'
+import { DEFAULT_CONTROLS, type ControlSettings } from '../config/controls'
 
 export type ViewMode = 'explore' | 'history'
 export type CameraMode = 'orbit' | 'fly'
@@ -53,6 +54,10 @@ interface RepoState {
     autoBankAngle: number
   }
 
+  // Settings state
+  showSettings: boolean
+  controlSettings: ControlSettings
+
   // Actions
   loadRepo: () => void
   setViewMode: (mode: ViewMode) => void
@@ -87,6 +92,10 @@ interface RepoState {
 
   // Flight state actions
   updateFlightState: (state: Partial<RepoState['flightState']>) => void
+
+  // Settings actions
+  setShowSettings: (show: boolean) => void
+  setControlSettings: (settings: ControlSettings) => void
 }
 
 export const useStore = create<RepoState>((set, get) => ({
@@ -124,6 +133,9 @@ export const useStore = create<RepoState>((set, get) => ({
     rollVelocity: 0,
     autoBankAngle: 0,
   },
+
+  showSettings: false,
+  controlSettings: DEFAULT_CONTROLS,
 
   // Actions
   loadRepo: () => {
@@ -241,6 +253,10 @@ export const useStore = create<RepoState>((set, get) => ({
     const { flightState } = get()
     set({ flightState: { ...flightState, ...state } })
   },
+
+  // Settings actions
+  setShowSettings: (showSettings) => set({ showSettings }),
+  setControlSettings: (controlSettings) => set({ controlSettings }),
 }))
 
 // Selector hooks for performance

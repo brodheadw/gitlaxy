@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '../store'
 import type { ShipType } from '../store'
+import { PERFORMANCE } from '../config/performance'
 
 // Ship configuration for exhaust animations
 interface ExhaustRefs {
@@ -409,6 +410,8 @@ export default function Spaceship() {
 
     const time = state.clock.elapsedTime
     const dt = Math.min(delta, 0.1)
+    const exhaustCfg = PERFORMANCE.ship.exhaust
+    const animationEnabled = PERFORMANCE.toggles.exhaustAnimation
 
     // Position ship in front of and slightly below camera
     const offset = new THREE.Vector3(0, -2, -10)
@@ -442,38 +445,40 @@ export default function Spaceship() {
     }
 
     // Animate exhausts based on speed and boost state
-    const baseFlicker = Math.sin(time * 40) * 0.15 + Math.sin(time * 67) * 0.1
-    const thrustIntensity = Math.min(flightState.speed / 500, 1) // 0-1 based on speed
-    const boostMultiplier = flightState.isBoosting ? 2.5 : 1
+    const baseFlicker = animationEnabled
+      ? Math.sin(time * exhaustCfg.primaryFreq) * 0.15 + Math.sin(time * exhaustCfg.interferenceFreq) * 0.1
+      : 0
+    const thrustIntensity = animationEnabled ? Math.min(flightState.speed / 500, 1) : 0 // 0-1 based on speed
+    const boostMultiplier = animationEnabled && flightState.isBoosting ? 2.5 : 1
 
     if (exhaustRef.current) {
       const mat = exhaustRef.current.material as THREE.MeshBasicMaterial
       const intensity = thrustIntensity * boostMultiplier
       exhaustRef.current.scale.z = 0.5 + intensity * 1.5 + baseFlicker * intensity
-      mat.opacity = 0.2 + intensity * 0.6 + baseFlicker * 0.2
+      mat.opacity = Math.min(1, exhaustCfg.baseOpacity + intensity * exhaustCfg.opacityVariation + baseFlicker * 0.2)
     }
 
     if (leftExhaustRef.current) {
       const mat = leftExhaustRef.current.material as THREE.MeshBasicMaterial
       const intensity = thrustIntensity * boostMultiplier * 0.8
       leftExhaustRef.current.scale.z = 0.3 + intensity * 1.2 + baseFlicker * intensity * 0.8
-      mat.opacity = 0.15 + intensity * 0.5 + baseFlicker * 0.15
+      mat.opacity = Math.min(1, exhaustCfg.baseOpacity * 0.75 + intensity * exhaustCfg.opacityVariation * 0.8 + baseFlicker * 0.15)
     }
 
     if (rightExhaustRef.current) {
       const mat = rightExhaustRef.current.material as THREE.MeshBasicMaterial
       const intensity = thrustIntensity * boostMultiplier * 0.8
       rightExhaustRef.current.scale.z = 0.3 + intensity * 1.2 + baseFlicker * intensity * 0.8
-      mat.opacity = 0.15 + intensity * 0.5 + baseFlicker * 0.15
+      mat.opacity = Math.min(1, exhaustCfg.baseOpacity * 0.75 + intensity * exhaustCfg.opacityVariation * 0.8 + baseFlicker * 0.15)
     }
   }, 1)
 
   if (cameraMode !== 'fly') return null
 
   const exhaustRefs: ExhaustRefs = {
-    main: exhaustRef,
-    left: leftExhaustRef,
-    right: rightExhaustRef,
+    main: exhaustRef as React.RefObject<THREE.Mesh>,
+    left: leftExhaustRef as React.RefObject<THREE.Mesh>,
+    right: rightExhaustRef as React.RefObject<THREE.Mesh>,
   }
 
   // Derive isMoving from flight state - ship is "moving" when above minimum cruise speed

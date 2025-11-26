@@ -2,6 +2,7 @@ import { Canvas } from '@react-three/fiber'
 import { Suspense } from 'react'
 import Scene from './components/Scene'
 import HUD from './components/HUD'
+import SettingsMenu from './components/SettingsMenu'
 import './index.css'
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
         </Suspense>
       </Canvas>
       <HUD />
+      <SettingsMenu />
     </>
   )
 }

@@ -6,6 +6,7 @@ import type { FolderNode, FileNode } from '../types'
 import { getColorForExtension } from '../types'
 import { useStore } from '../store'
 import ProceduralPlanet from './ProceduralPlanet'
+import { PERFORMANCE } from '../config/performance'
 
 interface SolarSystemProps {
   folder: FolderNode
@@ -16,57 +17,49 @@ interface SolarSystemProps {
 
 // Get star color and properties based on depth and size
 function getStarProperties(depth: number, childCount: number, totalDescendants: number) {
-  // Top-level folders with many children = Blue Supergiants
-  // Mid-level folders = Main sequence (yellow/orange)
-  // Deep/small folders = Red dwarfs
+  const cfg = PERFORMANCE.folders
 
-  if (depth === 0 && totalDescendants > 10) {
-    // Blue Supergiant - large top-level folders
+  if (depth === 0 && totalDescendants > cfg.sizing.depth0Large.minDescendants) {
     return {
       color: new THREE.Color('#8bb4ff'),
       coronaColor: new THREE.Color('#aaccff'),
-      size: 120 + Math.min(totalDescendants * 2, 100),
-      intensity: 4,
+      size: cfg.sizing.depth0Large.base + Math.min(totalDescendants * cfg.sizing.depth0Large.multiplier, cfg.sizing.depth0Large.max),
+      intensity: cfg.intensity.blueSupergiant,
     }
   } else if (depth === 0) {
-    // Blue-white main sequence - smaller top-level
     return {
       color: new THREE.Color('#b4c7ff'),
       coronaColor: new THREE.Color('#ccdeff'),
-      size: 80 + Math.min(childCount * 5, 60),
-      intensity: 3,
+      size: cfg.sizing.depth0Small.base + Math.min(childCount * cfg.sizing.depth0Small.multiplier, cfg.sizing.depth0Small.max),
+      intensity: cfg.intensity.blueWhite,
     }
-  } else if (depth === 1 && childCount > 5) {
-    // Yellow giant - large nested folders
+  } else if (depth === 1 && childCount > cfg.sizing.depth1Large.minChildren) {
     return {
       color: new THREE.Color('#fff4e0'),
       coronaColor: new THREE.Color('#ffeecc'),
-      size: 60 + Math.min(childCount * 4, 50),
-      intensity: 2.5,
+      size: cfg.sizing.depth1Large.base + Math.min(childCount * cfg.sizing.depth1Large.multiplier, cfg.sizing.depth1Large.max),
+      intensity: cfg.intensity.yellowGiant,
     }
   } else if (depth === 1) {
-    // Yellow main sequence
     return {
       color: new THREE.Color('#ffee88'),
       coronaColor: new THREE.Color('#ffdd66'),
-      size: 45 + Math.min(childCount * 3, 35),
-      intensity: 2,
+      size: cfg.sizing.depth1Small.base + Math.min(childCount * cfg.sizing.depth1Small.multiplier, cfg.sizing.depth1Small.max),
+      intensity: cfg.intensity.yellowMain,
     }
   } else if (depth === 2) {
-    // Orange dwarf
     return {
       color: new THREE.Color('#ffaa55'),
       coronaColor: new THREE.Color('#ff9944'),
-      size: 35 + Math.min(childCount * 2, 25),
-      intensity: 1.5,
+      size: cfg.sizing.depth2.base + Math.min(childCount * cfg.sizing.depth2.multiplier, cfg.sizing.depth2.max),
+      intensity: cfg.intensity.orangeDwarf,
     }
   } else {
-    // Red dwarf - deep nested folders
     return {
       color: new THREE.Color('#ff6644'),
       coronaColor: new THREE.Color('#ff5533'),
-      size: 25 + Math.min(childCount * 1.5, 15),
-      intensity: 1,
+      size: cfg.sizing.depthDeep.base + Math.min(childCount * cfg.sizing.depthDeep.multiplier, cfg.sizing.depthDeep.max),
+      intensity: cfg.intensity.redDwarf,
     }
   }
 }
@@ -89,14 +82,16 @@ function Sun({ folder, depth, totalChildren }: {
 
   useFrame((state) => {
     if (!sunRef.current) return
+    if (!PERFORMANCE.toggles.folderAnimation) return
     const time = state.clock.elapsedTime
+    const cfg = PERFORMANCE.folders
 
     // Slow rotation
-    sunRef.current.rotation.y += 0.0005
+    sunRef.current.rotation.y += cfg.animation.rotateSpeed
 
     // Animate corona
     if (coronaRef.current) {
-      coronaRef.current.scale.setScalar(1 + Math.sin(time * 0.5) * 0.05)
+      coronaRef.current.scale.setScalar(1 + Math.sin(time * cfg.animation.coronaPulse) * cfg.animation.coronaAmount)
     }
   })
 
@@ -120,43 +115,43 @@ function Sun({ folder, depth, totalChildren }: {
           document.body.style.cursor = 'default'
         }}
       >
-        <sphereGeometry args={[starProps.size * 1.3, 16, 16]} />
+        <sphereGeometry args={[starProps.size * PERFORMANCE.folders.scale.interaction, PERFORMANCE.folders.geometry.interactionDetail, PERFORMANCE.folders.geometry.interactionDetail]} />
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
 
       {/* Core sun sphere */}
-      <Sphere args={[starProps.size, 64, 64]}>
+      <Sphere args={[starProps.size, PERFORMANCE.folders.geometry.coreDetail, PERFORMANCE.folders.geometry.coreDetail]}>
         <meshBasicMaterial color={starProps.color} />
       </Sphere>
 
       {/* Inner corona glow */}
-      <Sphere args={[starProps.size * 1.1, 32, 32]}>
+      <Sphere args={[starProps.size * PERFORMANCE.folders.scale.coronaInner, PERFORMANCE.folders.geometry.coronaInner, PERFORMANCE.folders.geometry.coronaInner]}>
         <meshBasicMaterial
           color={starProps.coronaColor}
           transparent
-          opacity={0.4}
+          opacity={PERFORMANCE.folders.visual.coronaInnerOpacity}
           side={THREE.BackSide}
           depthWrite={false}
         />
       </Sphere>
 
       {/* Outer corona */}
-      <Sphere ref={coronaRef} args={[starProps.size * 1.3, 32, 32]}>
+      <Sphere ref={coronaRef} args={[starProps.size * PERFORMANCE.folders.scale.coronaOuter, PERFORMANCE.folders.geometry.coronaOuter, PERFORMANCE.folders.geometry.coronaOuter]}>
         <meshBasicMaterial
           color={starProps.coronaColor}
           transparent
-          opacity={0.15}
+          opacity={PERFORMANCE.folders.visual.coronaOuterOpacity}
           side={THREE.BackSide}
           depthWrite={false}
         />
       </Sphere>
 
       {/* Distant glow */}
-      <Sphere args={[starProps.size * 2, 32, 32]}>
+      <Sphere args={[starProps.size * PERFORMANCE.folders.scale.glow, PERFORMANCE.folders.geometry.glowDetail, PERFORMANCE.folders.geometry.glowDetail]}>
         <meshBasicMaterial
           color={starProps.color}
           transparent
-          opacity={0.05}
+          opacity={PERFORMANCE.folders.visual.glowOpacity}
           side={THREE.BackSide}
           depthWrite={false}
         />
@@ -166,20 +161,20 @@ function Sun({ folder, depth, totalChildren }: {
       <pointLight
         color={starProps.color}
         intensity={starProps.intensity}
-        distance={starProps.size * 25}
-        decay={2}
+        distance={starProps.size * PERFORMANCE.lighting.folderDistance}
+        decay={PERFORMANCE.lighting.folderDecay}
       />
 
       {/* Label */}
       <Html
-        position={[0, starProps.size * 1.5, 0]}
+        position={[0, starProps.size * PERFORMANCE.folders.scale.labelOffset, 0]}
         center
-        distanceFactor={200}
+        distanceFactor={PERFORMANCE.folders.ui.labelDistance}
         style={{ pointerEvents: 'none' }}
       >
         <div
           style={{
-            background: isHovered ? 'rgba(0, 0, 0, 0.9)' : 'rgba(0, 0, 0, 0.5)',
+            background: isHovered ? PERFORMANCE.folders.ui.hoverBackground : PERFORMANCE.folders.ui.defaultBackground,
             color: `#${starProps.color.getHexString()}`,
             padding: '4px 10px',
             borderRadius: '4px',
@@ -205,6 +200,7 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
   startAngle: number
 }) {
   const planetRef = useRef<THREE.Group>(null)
+  const orbitUpdateCounter = useRef(0)
   const [hovered, setHovered] = useState(false)
   const { selectNode, hoverNode, selectedNode } = useStore()
 
@@ -212,17 +208,22 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
   const isSelected = selectedNode?.id === file.id
 
   // Planet size based on file size
-  const baseSize = 15 + Math.log10(Math.max(file.size, 100)) * 8
+  const cfg = PERFORMANCE.files
+  const baseSize = cfg.sizing.baseSize + Math.log10(Math.max(file.size, cfg.sizing.minFileSize)) * cfg.sizing.sizeMultiplier
 
   useFrame((state) => {
     if (!planetRef.current) return
-    const time = state.clock.elapsedTime
+    orbitUpdateCounter.current += 1
+    if (orbitUpdateCounter.current % PERFORMANCE.updates.orbitInterval !== 0) return
+    const time = PERFORMANCE.toggles.orbitAnimation ? state.clock.elapsedTime : 0
 
-    // Orbit around sun
-    const angle = startAngle + time * orbitSpeed
+    // Orbit around sun (freeze when orbit animation toggle is off)
+    const angle = startAngle + (PERFORMANCE.toggles.orbitAnimation ? time * orbitSpeed * PERFORMANCE.files.animation.orbitUpdate : 0)
     planetRef.current.position.x = Math.cos(angle) * orbitRadius
     planetRef.current.position.z = Math.sin(angle) * orbitRadius
-    planetRef.current.position.y = Math.sin(angle * 0.5) * orbitRadius * 0.05
+    planetRef.current.position.y = PERFORMANCE.toggles.orbitAnimation
+      ? Math.sin(angle * cfg.animation.wobbleSpeed) * orbitRadius * cfg.animation.wobbleFactor
+      : 0
   })
 
   return (
@@ -245,7 +246,7 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
           document.body.style.cursor = 'default'
         }}
       >
-        <sphereGeometry args={[baseSize * 1.2, 16, 16]} />
+        <sphereGeometry args={[baseSize * cfg.visual.interactionScale, cfg.geometry.interactionDetail, cfg.geometry.interactionDetail]} />
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
 
@@ -254,17 +255,17 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
         size={baseSize}
         color={color}
         extension={file.extension}
-        rotationSpeed={0.005}
+        rotationSpeed={cfg.animation.rotationSpeed}
       />
 
       {/* Selection indicator */}
       {(isSelected || hovered) && (
         <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[baseSize * 2, baseSize * 2.3, 64]} />
+          <ringGeometry args={[baseSize * cfg.selectionRing.innerScale, baseSize * cfg.selectionRing.outerScale, cfg.geometry.selectionRingDetail]} />
           <meshBasicMaterial
             color={color}
             transparent
-            opacity={0.7}
+            opacity={cfg.selectionRing.opacity}
             side={THREE.DoubleSide}
             blending={THREE.AdditiveBlending}
           />
@@ -274,14 +275,14 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
       {/* Label - only show on hover */}
       {hovered && (
         <Html
-          position={[0, baseSize * 1.5 + 5, 0]}
+          position={[0, baseSize * cfg.visual.labelOffset + cfg.visual.labelExtraOffset, 0]}
           center
-          distanceFactor={120}
+          distanceFactor={cfg.ui.labelDistance}
           style={{ pointerEvents: 'none' }}
         >
           <div
             style={{
-              background: 'rgba(0, 0, 0, 0.85)',
+              background: cfg.ui.background,
               color: `#${color.getHexString()}`,
               padding: '3px 8px',
               borderRadius: '3px',
@@ -301,13 +302,14 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
 
 // Orbit ring visualization
 function OrbitRing({ radius, color }: { radius: number; color: THREE.Color }) {
+  const cfg = PERFORMANCE.orbitRings
   return (
     <mesh rotation={[Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[radius - 0.5, radius + 0.5, 128]} />
+      <ringGeometry args={[radius - cfg.thickness / 2, radius + cfg.thickness / 2, cfg.detail]} />
       <meshBasicMaterial
         color={color}
         transparent
-        opacity={0.08}
+        opacity={cfg.opacity}
         side={THREE.DoubleSide}
         depthWrite={false}
       />
@@ -336,11 +338,12 @@ export default function SolarSystem({ folder, position, depth, totalChildren }: 
   const orbits = useMemo(() => {
     const files = folder.children.filter((c): c is FileNode => c.type === 'file')
     const sunSize = starProps.size
+    const cfg = PERFORMANCE.files.orbit
 
     return files.map((file, index) => {
-      const orbitRadius = sunSize * 2.5 + (index + 1) * 100
-      const orbitSpeed = 0.02 / (index + 1)
-      const startAngle = (index / Math.max(files.length, 1)) * Math.PI * 2 + (index * 0.3)
+      const orbitRadius = sunSize * cfg.radiusBase + (index + 1) * cfg.radiusSpacing
+      const orbitSpeed = cfg.speedBase / (index + 1)
+      const startAngle = (index / Math.max(files.length, 1)) * Math.PI * 2 + (index * cfg.angleSpacing)
 
       return { file, orbitRadius, orbitSpeed, startAngle }
     })

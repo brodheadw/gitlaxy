@@ -2,40 +2,44 @@ import { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '../store'
+import { DEFAULT_CONTROLS, type ControlSettings } from '../config/controls'
+import { PERFORMANCE } from '../config/performance'
 
-// NMS-style flight configuration
-const FLIGHT_CONFIG = {
+// NMS-style flight configuration factory
+const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS) => ({
   // Speed settings (units per second)
-  minSpeed: -300,         // Reverse speed limit
-  normalSpeed: 200,       // Normal cruise speed (only used when W is held)
-  maxSpeed: 3000,         // Maximum speed (same with or without boost)
-  boostSpeed: 3000,       // Boost speed (same as max - boost just accelerates faster)
+  minSpeed: -300,
+  normalSpeed: 200,
+  maxSpeed: 3000,
+  boostSpeed: 3000,
 
-  // Acceleration/deceleration
-  acceleration: 150,      // How fast we speed up
-  deceleration: 100,      // How fast we slow down (when not thrusting)
-  brakeForce: 300,        // How fast S key slows us down
+  // Acceleration/deceleration - uses control preset values
+  acceleration: controls.acceleration,
+  deceleration: controls.deceleration,
+  brakeForce: controls.brakeForce,
 
-  // Turn rates (radians per second at base speed)
-  basePitchRate: 1.5,     // Pitch sensitivity
-  baseYawRate: 1.2,       // Yaw sensitivity
-  rollRate: 2.5,          // Manual roll speed (A/D keys)
+  // Turn rates (radians per second at base speed) - uses control preset values
+  basePitchRate: controls.turnRate,
+  baseYawRate: controls.turnRate * 0.8,
+  rollRate: controls.rollRate,
 
-  // Auto-banking
-  autoBankStrength: 0.4,  // How much the ship banks into turns
-  autoBankSpeed: 3,       // How fast the bank adjusts
+  // Auto-banking - uses control preset values
+  autoBankStrength: controls.autoBankStrength,
+  autoBankSpeed: 3,
 
   // Speed affects agility
-  agilityAtMinSpeed: 1.0, // Turn rate multiplier at min speed
-  agilityAtMaxSpeed: 0.3, // Turn rate multiplier at max/boost speed
-  agilityAtBoost: 0.15,   // Turn rate multiplier during boost
+  agilityAtMinSpeed: 1.0,
+  agilityAtMaxSpeed: 0.3,
+  agilityAtBoost: 0.15,
 
-  // Mouse sensitivity
-  mouseSensitivity: 0.004,
-}
+  // Mouse sensitivity - user controls
+  mouseSensitivity: 0.004 * PERFORMANCE.ship.controls.mouseSensitivity * controls.mouseSensitivity,
+  invertY: controls.invertY,
+  invertX: controls.invertX,
+})
 
 interface ShipControlsProps {
-  config?: Partial<typeof FLIGHT_CONFIG>
+  controlSettings?: ControlSettings
 }
 
 // Key bindings for flight controls
@@ -45,16 +49,15 @@ const FLIGHT_KEYS = new Set([
   'ShiftLeft', 'ShiftRight', 'KeyE', 'Space'
 ])
 
-export default function ShipControls({ config }: ShipControlsProps) {
+export default function ShipControls({ controlSettings }: ShipControlsProps) {
   const { camera, gl } = useThree()
   const { cameraMode, setCameraMode, keysPressed, setKeyPressed, updateFlightState } = useStore()
 
-  // Merge config
-  const cfg = { ...FLIGHT_CONFIG, ...config }
+  // Create flight config from control settings
+  const cfg = createFlightConfig(controlSettings)
 
   // Flight state
   const currentSpeed = useRef(cfg.minSpeed)
-  const targetSpeed = useRef(cfg.normalSpeed)
   const isBoosting = useRef(false)
 
   // Rotation state for smooth interpolation
@@ -65,9 +68,9 @@ export default function ShipControls({ config }: ShipControlsProps) {
 
   // Mouse input accumulator
   const mouseInput = useRef({ x: 0, y: 0 })
+  const updateCounter = useRef(0)
 
   // Quaternion helpers
-  const tempQuat = useRef(new THREE.Quaternion())
   const yawQuat = useRef(new THREE.Quaternion())
   const pitchQuat = useRef(new THREE.Quaternion())
   const rollQuat = useRef(new THREE.Quaternion())
@@ -152,6 +155,8 @@ export default function ShipControls({ config }: ShipControlsProps) {
 
   useFrame((_, delta) => {
     if (cameraMode !== 'fly') return
+    updateCounter.current += 1
+    if (updateCounter.current % PERFORMANCE.ship.controls.updateFrequency !== 0) return
 
     // Clamp delta to prevent huge jumps
     const dt = Math.min(delta, 0.1)
@@ -216,9 +221,9 @@ export default function ShipControls({ config }: ShipControlsProps) {
 
     // --- ROTATION FROM MOUSE ---
 
-    // Consume accumulated mouse input
-    const mouseX = mouseInput.current.x * cfg.mouseSensitivity
-    const mouseY = mouseInput.current.y * cfg.mouseSensitivity
+    // Consume accumulated mouse input with inversion support
+    const mouseX = mouseInput.current.x * cfg.mouseSensitivity * (cfg.invertX ? -1 : 1)
+    const mouseY = mouseInput.current.y * cfg.mouseSensitivity * (cfg.invertY ? -1 : 1)
     mouseInput.current.x = 0
     mouseInput.current.y = 0
 
@@ -292,7 +297,8 @@ export default function ShipControls({ config }: ShipControlsProps) {
 
 // Hook to expose flight state for HUD/ship visualization
 export function useFlightState() {
-  const speedRef = useRef(FLIGHT_CONFIG.minSpeed)
+  const defaultConfig = createFlightConfig()
+  const speedRef = useRef(defaultConfig.minSpeed)
   const boostRef = useRef(false)
   const yawRef = useRef(0)
   const bankRef = useRef(0)

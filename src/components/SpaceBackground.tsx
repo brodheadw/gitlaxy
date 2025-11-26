@@ -1,6 +1,7 @@
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { PERFORMANCE } from '../config/performance'
 
 // Individual animated wisp/tendril within a nebula
 function NebulaWisp({ position, color, size, seed }: {
@@ -10,22 +11,28 @@ function NebulaWisp({ position, color, size, seed }: {
   seed: number
 }) {
   const meshRef = useRef<THREE.Mesh>(null)
+  const updateCounter = useRef(0)
 
   useFrame((state) => {
     if (!meshRef.current) return
+    if (!PERFORMANCE.toggles.nebulaAnimation || !PERFORMANCE.toggles.wispAnimation) return
+    updateCounter.current += 1
+    if (updateCounter.current % PERFORMANCE.updates.nebulaInterval !== 0) return
+
     const time = state.clock.elapsedTime
+    const anim = PERFORMANCE.nebula.animation
 
     // Gentle floating motion
-    meshRef.current.position.x = position[0] + Math.sin(time * 0.1 + seed) * size * 0.1
-    meshRef.current.position.y = position[1] + Math.cos(time * 0.08 + seed * 2) * size * 0.08
-    meshRef.current.position.z = position[2] + Math.sin(time * 0.12 + seed * 3) * size * 0.1
+    meshRef.current.position.x = position[0] + Math.sin(time * anim.wispFloatX + seed) * size * 0.1
+    meshRef.current.position.y = position[1] + Math.cos(time * anim.wispFloatY + seed * 2) * size * 0.08
+    meshRef.current.position.z = position[2] + Math.sin(time * anim.wispFloatZ + seed * 3) * size * 0.1
 
     // Slow rotation
-    meshRef.current.rotation.x = time * 0.02 + seed
-    meshRef.current.rotation.y = time * 0.015
+    meshRef.current.rotation.x = time * anim.wispRotateX + seed
+    meshRef.current.rotation.y = time * anim.wispRotateY
 
     // Pulsing scale
-    const pulse = 1 + Math.sin(time * 0.3 + seed) * 0.15
+    const pulse = 1 + Math.sin(time * anim.wispPulse + seed) * 0.15
     meshRef.current.scale.setScalar(pulse)
   })
 
@@ -35,7 +42,7 @@ function NebulaWisp({ position, color, size, seed }: {
       <meshBasicMaterial
         color={color}
         transparent
-        opacity={0.002}
+        opacity={PERFORMANCE.nebula.visual.wispOpacity}
         side={THREE.DoubleSide}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
@@ -53,6 +60,7 @@ function NebulaDust({ basePosition, color, count, spread, seed }: {
   seed: number
 }) {
   const pointsRef = useRef<THREE.Points>(null)
+  const updateCounter = useRef(0)
 
   const { positions, sizes } = useMemo(() => {
     const pos = new Float32Array(count * 3)
@@ -77,11 +85,16 @@ function NebulaDust({ basePosition, color, count, spread, seed }: {
 
   useFrame((state) => {
     if (!pointsRef.current) return
+    if (!PERFORMANCE.toggles.nebulaAnimation || !PERFORMANCE.toggles.dustAnimation) return
+    updateCounter.current += 1
+    if (updateCounter.current % PERFORMANCE.updates.nebulaInterval !== 0) return
+
     const time = state.clock.elapsedTime
+    const anim = PERFORMANCE.nebula.animation
 
     // Slow swirling motion
-    pointsRef.current.rotation.y = time * 0.008 + seed
-    pointsRef.current.rotation.x = Math.sin(time * 0.003) * 0.1
+    pointsRef.current.rotation.y = time * anim.dustRotateY + seed
+    pointsRef.current.rotation.x = Math.sin(time * anim.dustRotateX) * 0.1
   })
 
   const geometry = useMemo(() => {
@@ -97,7 +110,7 @@ function NebulaDust({ basePosition, color, count, spread, seed }: {
         color={color}
         size={4}
         transparent
-        opacity={0.012}
+        opacity={PERFORMANCE.nebula.visual.dustOpacity}
         sizeAttenuation
         depthWrite={false}
         blending={THREE.AdditiveBlending}
@@ -119,6 +132,7 @@ function VolumetricNebula({ position, color, secondaryColor, size, seed }: {
   const coreRef = useRef<THREE.Group>(null)
   const threeColor = useMemo(() => new THREE.Color(color), [color])
   const threeSecondary = useMemo(() => new THREE.Color(secondaryColor), [secondaryColor])
+  const cfg = PERFORMANCE.nebula
 
   // Seeded random for consistent generation
   const seededRandom = (n: number) => {
@@ -129,7 +143,8 @@ function VolumetricNebula({ position, color, secondaryColor, size, seed }: {
   // Create multiple blob positions for this nebula region
   const blobs = useMemo(() => {
     const result = []
-    const blobCount = 6 + Math.floor(seededRandom(0) * 4)
+    const blobRange = cfg.quantity.blobMax - cfg.quantity.blobMin + 1
+    const blobCount = cfg.quantity.blobMin + Math.floor(seededRandom(0) * blobRange)
 
     for (let i = 0; i < blobCount; i++) {
       const angle = (i / blobCount) * Math.PI * 2 + (seed * 0.1)
@@ -145,16 +160,16 @@ function VolumetricNebula({ position, color, secondaryColor, size, seed }: {
         scale: 0.25 + seededRandom(i + 200) * 0.75,
         colorMix: seededRandom(i + 300),
         phaseOffset: seededRandom(i + 400) * Math.PI * 2,
-        layers: 5 + Math.floor(seededRandom(i + 500) * 5)
+        layers: cfg.quantity.layersMin + Math.floor(seededRandom(i + 500) * (cfg.quantity.layersMax - cfg.quantity.layersMin + 1))
       })
     }
     return result
-  }, [size, seed, seededRandom])
+  }, [cfg.quantity.blobMax, cfg.quantity.blobMin, cfg.quantity.layersMax, cfg.quantity.layersMin, size, seed, seededRandom])
 
   // Create wisps - floating tendrils
   const wisps = useMemo(() => {
     const result = []
-    const wispCount = 8 + Math.floor(seededRandom(1000) * 6)
+    const wispCount = cfg.quantity.wispMin + Math.floor(seededRandom(1000) * (cfg.quantity.wispMax - cfg.quantity.wispMin + 1))
 
     for (let i = 0; i < wispCount; i++) {
       const angle = seededRandom(i + 2000) * Math.PI * 2
@@ -179,20 +194,22 @@ function VolumetricNebula({ position, color, secondaryColor, size, seed }: {
       })
     }
     return result
-  }, [size, seed, threeColor, threeSecondary, seededRandom])
+  }, [cfg.quantity.wispMax, cfg.quantity.wispMin, size, seed, threeColor, threeSecondary, seededRandom])
 
 
   useFrame((state) => {
     if (!groupRef.current) return
+    if (!PERFORMANCE.toggles.nebulaAnimation) return
     const time = state.clock.elapsedTime
+    const anim = cfg.animation
 
     // Very slow overall rotation
-    groupRef.current.rotation.y = time * 0.003
+    groupRef.current.rotation.y = time * anim.groupRotate
 
     // Core group has slight wobble
     if (coreRef.current) {
-      coreRef.current.rotation.x = Math.sin(time * 0.05) * 0.05
-      coreRef.current.rotation.z = Math.cos(time * 0.04) * 0.03
+      coreRef.current.rotation.x = Math.sin(time * anim.coreWobbleX) * 0.05
+      coreRef.current.rotation.z = Math.cos(time * anim.coreWobbleZ) * 0.03
     }
   })
 
@@ -205,7 +222,7 @@ function VolumetricNebula({ position, color, secondaryColor, size, seed }: {
             {/* Multiple overlapping shapes create the amorphous effect */}
             {Array.from({ length: blob.layers }).map((_, layerIndex) => {
               const layerScale = blob.scale * size * (0.4 + layerIndex * 0.35)
-              const opacity = 0.0015 / (layerIndex * 0.4 + 1)
+              const opacity = cfg.visual.layerOpacity / (layerIndex * 0.4 + 1)
               const mixedColor = new THREE.Color().lerpColors(
                 threeColor,
                 threeSecondary,
@@ -251,14 +268,14 @@ function VolumetricNebula({ position, color, secondaryColor, size, seed }: {
       <NebulaDust
         basePosition={[0, 0, 0]}
         color={threeColor}
-        count={600}
+        count={cfg.quantity.dustPrimary}
         spread={size * 3}
         seed={seed}
       />
       <NebulaDust
         basePosition={[0, 0, 0]}
         color={threeSecondary}
-        count={400}
+        count={cfg.quantity.dustSecondary}
         spread={size * 2}
         seed={seed + 1000}
       />
@@ -268,7 +285,8 @@ function VolumetricNebula({ position, color, secondaryColor, size, seed }: {
 
 export default function SpaceBackground() {
   // Volumetric nebula regions - spread throughout entire space with 3D distribution
-  const nebulaRegions = useMemo(() => [
+  const nebulaRegions = useMemo(() => {
+    const regions = [
     // Core region nebulae - some above and below
     { position: [0, 3000, -2000] as [number, number, number], color: '#9933ff', secondaryColor: '#ff33cc', size: 4000, seed: 1 },
     { position: [-2000, -4000, 1000] as [number, number, number], color: '#ff3366', secondaryColor: '#ff9933', size: 3500, seed: 2 },
@@ -313,7 +331,10 @@ export default function SpaceBackground() {
     { position: [-40000, 0, 0] as [number, number, number], color: '#ffff66', secondaryColor: '#ffff99', size: 9000, seed: 31 },
     { position: [0, 0, 40000] as [number, number, number], color: '#66ffff', secondaryColor: '#99ffff', size: 9000, seed: 32 },
     { position: [0, 0, -40000] as [number, number, number], color: '#ff66ff', secondaryColor: '#ff99ff', size: 9000, seed: 33 },
-  ], [])
+    ]
+
+    return regions.slice(0, Math.min(regions.length, PERFORMANCE.nebula.quantity.total))
+  }, [])
 
   return (
     <group>
