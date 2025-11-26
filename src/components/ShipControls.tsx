@@ -8,8 +8,8 @@ const FLIGHT_CONFIG = {
   // Speed settings (units per second)
   minSpeed: -300,         // Reverse speed limit
   normalSpeed: 200,       // Normal cruise speed (only used when W is held)
-  maxSpeed: 3000,         // Maximum normal speed
-  boostSpeed: 6000,       // Boost speed (2x max)
+  maxSpeed: 3000,         // Maximum speed (same with or without boost)
+  boostSpeed: 3000,       // Boost speed (same as max - boost just accelerates faster)
 
   // Acceleration/deceleration
   acceleration: 150,      // How fast we speed up
