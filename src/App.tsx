@@ -9,8 +9,8 @@ function App() {
   return (
     <>
       <Canvas
-        camera={{ position: [0, 800, 4000], fov: 60, near: 0.1, far: 100000 }}
-        gl={{ antialias: true, alpha: false }}
+        camera={{ position: [0, 800, 4000], fov: 60, near: 1, far: 100000 }}
+        gl={{ antialias: true, alpha: false, logarithmicDepthBuffer: true }}
       >
         <color attach="background" args={['#010103']} />
         {/* Removed fog - it was causing the black circle effect */}

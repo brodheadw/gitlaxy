@@ -24,11 +24,19 @@ export default function Scene() {
         color="#fff8e7"
       />
 
-      {/* Stars - uses points that render at infinity, no depth issues */}
+      {/* Stars - two layers to fill volume without empty center */}
       <Stars
-        radius={PERFORMANCE.stars.radius}
-        depth={PERFORMANCE.stars.depth}
-        count={PERFORMANCE.stars.count}
+        radius={PERFORMANCE.stars.innerRadius}
+        depth={PERFORMANCE.stars.innerDepth}
+        count={PERFORMANCE.stars.innerCount}
+        factor={PERFORMANCE.stars.size}
+        saturation={PERFORMANCE.stars.saturation}
+        fade={false}
+      />
+      <Stars
+        radius={PERFORMANCE.stars.outerRadius}
+        depth={PERFORMANCE.stars.outerDepth}
+        count={PERFORMANCE.stars.outerCount}
         factor={PERFORMANCE.stars.size}
         saturation={PERFORMANCE.stars.saturation}
         fade={false}
@@ -43,7 +51,7 @@ export default function Scene() {
       {/* Spaceship visible in fly mode */}
       <Spaceship />
 
-      {/* Camera controls based on mode */}
+      {/* Camera controls */}
       {cameraMode === 'orbit' && (
         <OrbitControls
           enablePan={true}

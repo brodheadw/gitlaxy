@@ -106,7 +106,7 @@ function Sun({ folder, depth, totalChildren }: {
         onPointerOut={handlers.onPointerOut}
       >
         <sphereGeometry args={[starProps.size * PERFORMANCE.folders.scale.interaction, PERFORMANCE.folders.geometry.interactionDetail, PERFORMANCE.folders.geometry.interactionDetail]} />
-        <meshBasicMaterial transparent opacity={0} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 
       {/* Core sun sphere */}
@@ -210,7 +210,7 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
         onPointerOut={handlers.onPointerOut}
       >
         <sphereGeometry args={[baseSize * cfg.visual.interactionScale, cfg.geometry.interactionDetail, cfg.geometry.interactionDetail]} />
-        <meshBasicMaterial transparent opacity={0} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 
       {/* Procedural planet */}

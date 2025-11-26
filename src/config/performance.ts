@@ -62,11 +62,17 @@ export const PERFORMANCE = {
     },
   },
 
-  // Stars controls
+  // Stars controls - using multiple layers to fill volume
   stars: {
-    count: 15000,
-    radius: 50000,
-    depth: 80,
+    // Inner layer
+    innerRadius: 10000,
+    innerDepth: 20000,   // 0 to 20000 units
+    innerCount: 8000,
+    // Outer layer
+    outerRadius: 50000,
+    outerDepth: 60000,   // 20000 to 80000 units
+    outerCount: 12000,
+    // Shared settings
     size: 8,
     saturation: 0.1,
   },
