@@ -1,5 +1,11 @@
 // Ship control presets and sensitivity settings
 
+/**
+ * Base multiplier for mouse sensitivity calculations.
+ * This value is applied before preset and user sensitivity multipliers.
+ */
+export const MOUSE_SENSITIVITY_BASE = 0.004
+
 export interface ControlPreset {
   name: string
   description: string

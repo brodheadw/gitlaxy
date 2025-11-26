@@ -4,6 +4,17 @@
  */
 
 /**
+ * Random seed multipliers for different procedural generation contexts.
+ * These constants ensure consistent visual outputs across different components.
+ */
+export const RANDOM_SEEDS = {
+  planetTexture: 9999,
+  cloudTexture: 7777,
+  dustParticles: 1337,
+  nebulaWisps: 9999,
+} as const
+
+/**
  * Creates a seeded random number generator function.
  *
  * @param seed - The seed value for random generation

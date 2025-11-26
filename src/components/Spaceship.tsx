@@ -451,26 +451,60 @@ export default function Spaceship() {
     const thrustIntensity = animationEnabled ? Math.min(flightState.speed / 500, 1) : 0 // 0-1 based on speed
     const boostMultiplier = animationEnabled && flightState.isBoosting ? 2.5 : 1
 
-    if (exhaustRef.current) {
-      const mat = exhaustRef.current.material as THREE.MeshBasicMaterial
-      const intensity = thrustIntensity * boostMultiplier
-      exhaustRef.current.scale.z = 0.5 + intensity * 1.5 + baseFlicker * intensity
-      mat.opacity = Math.min(1, exhaustCfg.baseOpacity + intensity * exhaustCfg.opacityVariation + baseFlicker * 0.2)
+    // Helper function to animate individual exhaust
+    const animateExhaust = (
+      ref: React.RefObject<THREE.Mesh>,
+      config: {
+        intensityMultiplier: number
+        baseScale: number
+        scaleMultiplier: number
+        flickerAmount: number
+        baseOpacityMultiplier: number
+        opacityFlickerMultiplier: number
+      }
+    ) => {
+      if (!ref.current) return
+
+      const mat = ref.current.material as THREE.MeshBasicMaterial
+      const intensity = thrustIntensity * boostMultiplier * config.intensityMultiplier
+      ref.current.scale.z = config.baseScale + intensity * config.scaleMultiplier + baseFlicker * intensity * config.flickerAmount
+      mat.opacity = Math.min(
+        1,
+        exhaustCfg.baseOpacity * config.baseOpacityMultiplier +
+          intensity * exhaustCfg.opacityVariation * config.intensityMultiplier +
+          baseFlicker * config.opacityFlickerMultiplier
+      )
     }
 
-    if (leftExhaustRef.current) {
-      const mat = leftExhaustRef.current.material as THREE.MeshBasicMaterial
-      const intensity = thrustIntensity * boostMultiplier * 0.8
-      leftExhaustRef.current.scale.z = 0.3 + intensity * 1.2 + baseFlicker * intensity * 0.8
-      mat.opacity = Math.min(1, exhaustCfg.baseOpacity * 0.75 + intensity * exhaustCfg.opacityVariation * 0.8 + baseFlicker * 0.15)
-    }
+    // Animate main exhaust
+    animateExhaust(exhaustRef, {
+      intensityMultiplier: 1,
+      baseScale: 0.5,
+      scaleMultiplier: 1.5,
+      flickerAmount: 1,
+      baseOpacityMultiplier: 1,
+      opacityFlickerMultiplier: 0.2,
+    })
 
-    if (rightExhaustRef.current) {
-      const mat = rightExhaustRef.current.material as THREE.MeshBasicMaterial
-      const intensity = thrustIntensity * boostMultiplier * 0.8
-      rightExhaustRef.current.scale.z = 0.3 + intensity * 1.2 + baseFlicker * intensity * 0.8
-      mat.opacity = Math.min(1, exhaustCfg.baseOpacity * 0.75 + intensity * exhaustCfg.opacityVariation * 0.8 + baseFlicker * 0.15)
-    }
+    // Animate left exhaust
+    animateExhaust(leftExhaustRef, {
+      intensityMultiplier: 0.8,
+      baseScale: 0.3,
+      scaleMultiplier: 1.2,
+      flickerAmount: 0.8,
+      baseOpacityMultiplier: 0.75,
+      opacityFlickerMultiplier: 0.15,
+    })
+
+    // Animate right exhaust
+    animateExhaust(rightExhaustRef, {
+      intensityMultiplier: 0.8,
+      baseScale: 0.3,
+      scaleMultiplier: 1.2,
+      flickerAmount: 0.8,
+      baseOpacityMultiplier: 0.75,
+      opacityFlickerMultiplier: 0.15,
+    })
   }, 1)
 
   if (cameraMode !== 'fly') return null

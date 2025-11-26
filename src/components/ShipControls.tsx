@@ -2,8 +2,9 @@ import { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '../store'
-import { DEFAULT_CONTROLS, type ControlSettings } from '../config/controls'
+import { DEFAULT_CONTROLS, MOUSE_SENSITIVITY_BASE, type ControlSettings } from '../config/controls'
 import { PERFORMANCE } from '../config/performance'
+import { useFrameThrottle } from '../hooks/useFrameThrottle'
 
 // NMS-style flight configuration factory
 const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS) => ({
@@ -33,7 +34,7 @@ const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS) => ({
   agilityAtBoost: 0.15,
 
   // Mouse sensitivity - user controls
-  mouseSensitivity: 0.004 * PERFORMANCE.ship.controls.mouseSensitivity * controls.mouseSensitivity,
+  mouseSensitivity: MOUSE_SENSITIVITY_BASE * PERFORMANCE.ship.controls.mouseSensitivity * controls.mouseSensitivity,
   invertY: controls.invertY,
   invertX: controls.invertX,
 })
@@ -68,7 +69,7 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
 
   // Mouse input accumulator
   const mouseInput = useRef({ x: 0, y: 0 })
-  const updateCounter = useRef(0)
+  const throttle = useFrameThrottle(PERFORMANCE.ship.controls.updateFrequency)
 
   // Quaternion helpers
   const yawQuat = useRef(new THREE.Quaternion())
@@ -155,8 +156,7 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
 
   useFrame((_, delta) => {
     if (cameraMode !== 'fly') return
-    updateCounter.current += 1
-    if (updateCounter.current % PERFORMANCE.ship.controls.updateFrequency !== 0) return
+    if (!throttle.shouldUpdate()) return
 
     // Clamp delta to prevent huge jumps
     const dt = Math.min(delta, 0.1)
