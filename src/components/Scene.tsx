@@ -1,7 +1,9 @@
+import { useEffect } from 'react'
 import { OrbitControls, Stars } from '@react-three/drei'
 import { EffectComposer, Bloom, ChromaticAberration, Vignette, Noise } from '@react-three/postprocessing'
 import { BlendFunction } from 'postprocessing'
 import { Vector2 } from 'three'
+import { useThree } from '@react-three/fiber'
 import { useStore } from '../store'
 import Galaxy from './Galaxy'
 import SpaceBackground from './SpaceBackground'
@@ -11,6 +13,34 @@ import { PERFORMANCE } from '../config/performance'
 
 export default function Scene() {
   const { cameraMode, controlSettings } = useStore()
+  const { camera, gl } = useThree()
+
+  // Handle window resize - update camera aspect ratio
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth
+      const height = window.innerHeight
+
+      // Update camera aspect ratio
+      if ('aspect' in camera) {
+        camera.aspect = width / height
+        camera.updateProjectionMatrix()
+      }
+
+      // Update renderer size
+      gl.setSize(width, height)
+    }
+
+    window.addEventListener('resize', handleResize)
+
+    // Also listen for fullscreen changes
+    document.addEventListener('fullscreenchange', handleResize)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      document.removeEventListener('fullscreenchange', handleResize)
+    }
+  }, [camera, gl])
 
   return (
     <>

@@ -110,6 +110,8 @@ export interface KeyBindings {
   brake: string[]
   rollLeft: string[]
   rollRight: string[]
+  strafeUp: string[]
+  strafeDown: string[]
   boost: string[]
   toggleCamera: string[]
   exitFly: string[]
@@ -120,7 +122,9 @@ export const DEFAULT_KEYBINDINGS: KeyBindings = {
   brake: ['KeyS', 'ArrowDown'],
   rollLeft: ['KeyA', 'ArrowLeft'],
   rollRight: ['KeyD', 'ArrowRight'],
-  boost: ['ShiftLeft', 'ShiftRight', 'KeyE'],
+  strafeUp: ['KeyQ'],
+  strafeDown: ['KeyE'],
+  boost: ['ShiftLeft', 'ShiftRight'],
   toggleCamera: ['KeyC'],
   exitFly: ['Escape'],
 }

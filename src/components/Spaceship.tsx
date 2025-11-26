@@ -1,9 +1,11 @@
+import { useGLTF } from '@react-three/drei'
 import { useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '../store'
 import type { ShipType } from '../store'
 import { PERFORMANCE } from '../config/performance'
+import { vector3Pool, resetAllPools } from '../utils/objectPool'
 
 // Ship configuration for exhaust animations
 interface ExhaustRefs {
@@ -386,12 +388,19 @@ function ExplorerShip({ exhaustRefs, isMoving }: { exhaustRefs: ExhaustRefs; isM
   )
 }
 
+function CustomShip() {
+  const { scene } = useGLTF('/Spacyship 3D Model.glb')
+  // You might need to adjust the scale, position, and rotation of your model.
+  return <primitive object={scene.clone()} scale={1} rotation={[0, -Math.PI / 2, 0]} />
+}
+
 // Ship info for the selector
 export const SHIP_INFO: Record<ShipType, { name: string; description: string; icon: string }> = {
-  falcon: { name: 'Falcon', description: 'Balanced fighter', icon: '🦅' },
+  falcon: { name: 'Falcon', description: 'Sleek fighter', icon: '🦅' },
   viper: { name: 'Viper', description: 'Fast interceptor', icon: '🐍' },
   hauler: { name: 'Hauler', description: 'Heavy cargo', icon: '📦' },
   explorer: { name: 'Explorer', description: 'Science vessel', icon: '🔭' },
+  custom: { name: 'Custom Ship', description: 'User-provided model', icon: '🚀' },
 }
 
 export default function Spaceship() {
@@ -402,6 +411,10 @@ export default function Spaceship() {
   const rightExhaustRef = useRef<THREE.Mesh>(null)
   const visualRoll = useRef(0)
   const visualPitch = useRef(0)
+
+  // Persistent offset vector (reused every frame, never reallocated)
+  const offsetVector = useRef(new THREE.Vector3())
+
   const { cameraMode, selectedShip, flightState } = useStore()
   const { camera } = useThree()
 
@@ -414,7 +427,9 @@ export default function Spaceship() {
     const animationEnabled = PERFORMANCE.toggles.exhaustAnimation
 
     // Position ship in front of and slightly below camera
-    const offset = new THREE.Vector3(0, -2, -10)
+    // Reuse the offset vector instead of creating a new one
+    const offset = offsetVector.current
+    offset.set(0, -0.5, -5)
     offset.applyQuaternion(camera.quaternion)
     shipRef.current.position.copy(camera.position).add(offset)
     shipRef.current.quaternion.copy(camera.quaternion)
@@ -444,12 +459,13 @@ export default function Spaceship() {
       shipModelRef.current.rotation.x = visualPitch.current
     }
 
-    // Animate exhausts based on speed and boost state
-    const baseFlicker = animationEnabled
-      ? Math.sin(time * exhaustCfg.primaryFreq) * 0.15 + Math.sin(time * exhaustCfg.interferenceFreq) * 0.1
-      : 0
-    const thrustIntensity = animationEnabled ? Math.min(flightState.speed / 500, 1) : 0 // 0-1 based on speed
-    const boostMultiplier = animationEnabled && flightState.isBoosting ? 2.5 : 1
+    // Animate exhausts based on speed and boost state, but not for the custom ship
+    if (selectedShip !== 'custom') {
+      const baseFlicker = animationEnabled
+        ? Math.sin(time * exhaustCfg.primaryFreq) * 0.15 + Math.sin(time * exhaustCfg.interferenceFreq) * 0.1
+        : 0
+      const thrustIntensity = animationEnabled ? Math.min(flightState.speed / 500, 1) : 0 // 0-1 based on speed
+      const boostMultiplier = animationEnabled && flightState.isBoosting ? 2.5 : 1
 
     // Helper function to animate individual exhaust
     const animateExhaust = (
@@ -505,6 +521,7 @@ export default function Spaceship() {
       baseOpacityMultiplier: 0.75,
       opacityFlickerMultiplier: 0.15,
     })
+    }
   }, 1)
 
   if (cameraMode !== 'fly') return null
@@ -525,6 +542,7 @@ export default function Spaceship() {
         {selectedShip === 'viper' && <ViperShip exhaustRefs={exhaustRefs} isMoving={isMoving} />}
         {selectedShip === 'hauler' && <HaulerShip exhaustRefs={exhaustRefs} isMoving={isMoving} />}
         {selectedShip === 'explorer' && <ExplorerShip exhaustRefs={exhaustRefs} isMoving={isMoving} />}
+        {selectedShip === 'custom' && <CustomShip />}
         <pointLight position={[0, 0, 0]} color="#aaaaff" intensity={0.15} distance={12} />
       </group>
     </group>

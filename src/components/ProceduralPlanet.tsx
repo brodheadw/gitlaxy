@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { PERFORMANCE } from '../config/performance'
@@ -269,6 +269,19 @@ export default function ProceduralPlanet({
       cloudsRef.current.rotation.y += rotationSpeed * 1.2
     }
   })
+
+  // Cleanup textures on unmount to prevent VRAM leaks
+  useEffect(() => {
+    return () => {
+      // Dispose of all procedurally generated textures
+      planetTexture?.dispose()
+      cloudTexture?.dispose()
+      ringTexture?.dispose()
+
+      // Dispose of ring geometry if it exists
+      ringGeometry?.dispose()
+    }
+  }, [planetTexture, cloudTexture, ringTexture, ringGeometry])
 
   return (
     <group>

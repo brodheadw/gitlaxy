@@ -6,7 +6,7 @@ import { DEFAULT_CONTROLS, type ControlSettings } from '../config/controls'
 export type ViewMode = 'explore' | 'history'
 export type CameraMode = 'orbit' | 'fly'
 export type ViewLevel = 'galaxy' | 'system' // galaxy = all systems, system = inside one folder
-export type ShipType = 'falcon' | 'viper' | 'hauler' | 'explorer'
+export type ShipType = 'falcon' | 'viper' | 'hauler' | 'explorer' | 'custom'
 
 interface CameraState {
   position: { x: number; y: number; z: number }
@@ -57,6 +57,7 @@ interface RepoState {
   // Settings state
   showSettings: boolean
   controlSettings: ControlSettings
+  showFPS: boolean
 
   // Actions
   loadRepo: () => void
@@ -96,6 +97,7 @@ interface RepoState {
   // Settings actions
   setShowSettings: (show: boolean) => void
   setControlSettings: (settings: ControlSettings) => void
+  setShowFPS: (show: boolean) => void
 }
 
 export const useStore = create<RepoState>((set, get) => ({
@@ -124,7 +126,7 @@ export const useStore = create<RepoState>((set, get) => ({
   playbackSpeed: 1,
 
   keysPressed: new Set(),
-  selectedShip: 'falcon',
+  selectedShip: 'custom',
   flightState: {
     speed: 0,
     isBoosting: false,
@@ -136,6 +138,7 @@ export const useStore = create<RepoState>((set, get) => ({
 
   showSettings: false,
   controlSettings: DEFAULT_CONTROLS,
+  showFPS: false,
 
   // Actions
   loadRepo: () => {
@@ -257,6 +260,7 @@ export const useStore = create<RepoState>((set, get) => ({
   // Settings actions
   setShowSettings: (showSettings) => set({ showSettings }),
   setControlSettings: (controlSettings) => set({ controlSettings }),
+  setShowFPS: (showFPS) => set({ showFPS }),
 }))
 
 // Selector hooks for performance

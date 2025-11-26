@@ -121,6 +121,29 @@
   box-shadow: 0 0 18px rgba(78, 205, 196, 0.35);
 }
 
+.shutdown-btn {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  color: #ff6b6b;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
+}
+
+.shutdown-btn:hover {
+  background: rgba(255, 107, 107, 0.25);
+  border-color: rgba(255, 107, 107, 0.6);
+  box-shadow: 0 0 18px rgba(255, 107, 107, 0.35);
+  transform: scale(1.05);
+}
+
 /* Bottom left - controls help */
 .hud-bottom-left {
   position: absolute;

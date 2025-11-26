@@ -1,11 +1,42 @@
 import { Canvas } from '@react-three/fiber'
-import { Suspense } from 'react'
+import { Suspense, useEffect } from 'react'
 import Scene from './components/Scene'
 import HUD from './components/HUD'
 import SettingsMenu from './components/SettingsMenu'
+import FPSCounter from './components/FPSCounter'
+import { useStore } from './store'
 import './index.css'
 
 function App() {
+  const showFPS = useStore((state) => state.showFPS)
+
+  // Cleanup on unmount and window close
+  useEffect(() => {
+    const cleanup = () => {
+      // Clear any stored state
+      sessionStorage.clear()
+
+      // Cancel any pending animations
+      const highestId = window.setTimeout(() => {}, 0)
+      for (let i = 0; i < highestId; i++) {
+        window.clearTimeout(i)
+        window.clearInterval(i)
+      }
+    }
+
+    // Handle beforeunload event
+    const handleBeforeUnload = () => {
+      cleanup()
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      cleanup()
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [])
+
   return (
     <>
       <Canvas
@@ -20,6 +51,7 @@ function App() {
       </Canvas>
       <HUD />
       <SettingsMenu />
+      {showFPS && <FPSCounter />}
     </>
   )
 }

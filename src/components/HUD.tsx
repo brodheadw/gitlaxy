@@ -95,6 +95,18 @@ export default function HUD() {
           >
             ⚙ Settings
           </button>
+
+          <button
+            className="shutdown-btn"
+            onClick={() => {
+              if (window.confirm('Are you sure you want to exit Gitlaxy?')) {
+                window.close()
+              }
+            }}
+            title="Exit Application"
+          >
+            ⏻ Exit
+          </button>
         </div>
       </div>
 
