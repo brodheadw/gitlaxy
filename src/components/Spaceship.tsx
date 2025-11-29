@@ -1,17 +1,20 @@
 import { useGLTF } from '@react-three/drei'
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 import { useStore } from '../store'
 import type { ShipType } from '../store'
 import { PERFORMANCE } from '../config/performance'
-import { vector3Pool, resetAllPools } from '../utils/objectPool'
+import { initializeDracoLoader, getDracoLoader } from '../utils/dracoLoader'
+import { disposeObject } from '../utils/disposeObject'
 
-// Configure Draco decoder path
-const dracoLoader = new DRACOLoader()
-dracoLoader.setDecoderPath('/draco/')
-dracoLoader.preload()
+// Start DRACO loader initialization immediately on module load
+// The singleton pattern in dracoLoader.ts ensures only one initialization happens
+// even if multiple components import this module
+const dracoLoaderPromise = initializeDracoLoader().catch(err => {
+  console.error('[Spaceship] Failed to initialize DRACOLoader:', err)
+  return null
+})
 
 // Ship configuration for exhaust animations
 interface ExhaustRefs {
@@ -395,12 +398,44 @@ function ExplorerShip({ exhaustRefs, isMoving }: { exhaustRefs: ExhaustRefs; isM
 }
 
 function CustomShip() {
+  return <CustomShipModel />
+}
+
+function CustomShipModel() {
   const { scene } = useGLTF('/spaceship-optimized.glb', undefined, undefined, (loader) => {
-    // Configure the GLTFLoader to use our Draco loader
-    loader.setDRACOLoader(dracoLoader)
+    // Configure the GLTFLoader to use our DRACO loader if available
+    try {
+      const dracoLoader = getDracoLoader()
+      loader.setDRACOLoader(dracoLoader as any)
+    } catch (error) {
+      console.warn('[CustomShip] DRACO loader not available, loading without compression:', error)
+    }
   })
-  // You might need to adjust the scale, position, and rotation of your model.
-  return <primitive object={scene.clone()} scale={1} rotation={[0, -Math.PI / 2, 0]} />
+
+  // Make sure all materials are visible
+  useEffect(() => {
+    if (scene) {
+      scene.traverse((child) => {
+        if ((child as any).isMesh) {
+          const mesh = child as THREE.Mesh
+          if (mesh.material) {
+            const mat = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+            mat.forEach((m: any) => {
+              m.visible = true
+              if (m.transparent) {
+                m.opacity = 1
+              }
+            })
+          }
+        }
+      })
+    }
+  }, [scene])
+
+  // Clone the scene to avoid mutating the cached model
+  const clonedScene = scene.clone()
+
+  return <primitive object={clonedScene} scale={50} rotation={[0, -Math.PI / 2, 0]} />
 }
 
 // Ship info for the selector
@@ -427,10 +462,6 @@ export default function Spaceship() {
   const { cameraMode, selectedShip, flightState } = useStore()
   const { camera } = useThree()
 
-  useEffect(() => {
-    console.log('SPACESHIP MODEL TO RENDER:', selectedShip)
-  }, [selectedShip])
-
   useFrame((state, delta) => {
     if (!shipRef.current || cameraMode !== 'fly') return
 
@@ -442,7 +473,10 @@ export default function Spaceship() {
     // Position ship in front of and slightly below camera
     // Reuse the offset vector instead of creating a new one
     const offset = offsetVector.current
-    offset.set(0, -0.5, -5)
+    // Custom ship is much larger (scale 50), so needs to be further away
+    const zOffset = selectedShip === 'custom' ? -250 : -5
+    const yOffset = selectedShip === 'custom' ? -25 : -0.5
+    offset.set(0, yOffset, zOffset)
     offset.applyQuaternion(camera.quaternion)
     shipRef.current.position.copy(camera.position).add(offset)
     shipRef.current.quaternion.copy(camera.quaternion)
@@ -482,7 +516,7 @@ export default function Spaceship() {
 
     // Helper function to animate individual exhaust
     const animateExhaust = (
-      ref: React.RefObject<THREE.Mesh>,
+      ref: React.RefObject<THREE.Mesh | null>,
       config: {
         intensityMultiplier: number
         baseScale: number
@@ -537,7 +571,15 @@ export default function Spaceship() {
     }
   }, 1)
 
-  if (cameraMode !== 'fly') return null
+  console.log('[Spaceship] Camera mode:', cameraMode, 'Selected ship:', selectedShip)
+
+  // TEMPORARILY DISABLED: Force render ship regardless of camera mode for debugging
+  // if (cameraMode !== 'fly') {
+  //   console.log('[Spaceship] Not in fly mode, returning null')
+  //   return null
+  // }
+
+  console.log('[Spaceship] Rendering ship...')
 
   const exhaustRefs: ExhaustRefs = {
     main: exhaustRef as React.RefObject<THREE.Mesh>,

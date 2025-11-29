@@ -1,19 +1,52 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { OrbitControls, Stars } from '@react-three/drei'
 import { EffectComposer, Bloom, ChromaticAberration, Vignette, Noise } from '@react-three/postprocessing'
 import { BlendFunction } from 'postprocessing'
 import { Vector2 } from 'three'
-import { useThree } from '@react-three/fiber'
+import { useThree, useFrame } from '@react-three/fiber'
 import { useStore } from '../store'
 import Galaxy from './Galaxy'
 import SpaceBackground from './SpaceBackground'
 import Spaceship from './Spaceship'
 import { FlyCamera } from './ShipControls'
 import { PERFORMANCE } from '../config/performance'
+import { contextRecovery } from '../utils/contextRecovery'
+import { detectMemoryLeaks } from '../utils/disposeObject'
+import { useProximityDetection } from '../hooks/useProximityDetection'
+
+// Component to run proximity detection
+function ProximityDetector() {
+  useProximityDetection()
+  return null
+}
 
 export default function Scene() {
   const { cameraMode, controlSettings } = useStore()
   const { camera, gl } = useThree()
+  const frameCount = useRef(0)
+  const memoryCheckInterval = 300 // Check every 300 frames (~5 seconds at 60fps)
+
+
+  // Initialize WebGL context recovery
+  useEffect(() => {
+    contextRecovery.initialize(gl, {
+      onContextLost: () => {
+        console.warn('[Scene] WebGL context lost - pausing rendering')
+      },
+      onContextRestore: () => {
+        console.log('[Scene] WebGL context restored - resuming rendering')
+        // Restore camera state
+        contextRecovery.restoreSceneState(camera)
+      },
+      onContextRestoreError: (error) => {
+        console.error('[Scene] Failed to restore context:', error)
+      },
+    })
+
+    return () => {
+      contextRecovery.dispose()
+    }
+  }, [gl, camera])
 
   // Handle window resize - update camera aspect ratio
   useEffect(() => {
@@ -42,9 +75,24 @@ export default function Scene() {
     }
   }, [camera, gl])
 
+  // Save scene state periodically and check for memory leaks
+  useFrame(() => {
+    frameCount.current++
+
+    // Save scene state every 60 frames for context recovery
+    if (frameCount.current % 60 === 0) {
+      contextRecovery.saveSceneState(camera)
+    }
+
+    // Periodic memory leak detection (debug mode only)
+    if (frameCount.current % memoryCheckInterval === 0 && import.meta.env.DEV) {
+      detectMemoryLeaks(gl)
+    }
+  })
+
   return (
     <>
-      {/* Ambient space lighting - very subtle */}
+      {/* Ambient space lighting */}
       <ambientLight intensity={PERFORMANCE.lighting.ambient} />
 
       {/* Distant sun-like light source */}
@@ -54,11 +102,19 @@ export default function Scene() {
         color="#fff8e7"
       />
 
-      {/* Stars - uses points that render at infinity, no depth issues */}
+      {/* Stars - two layers to fill volume without empty center */}
       <Stars
-        radius={PERFORMANCE.stars.radius}
-        depth={PERFORMANCE.stars.depth}
-        count={PERFORMANCE.stars.count}
+        radius={PERFORMANCE.stars.innerRadius}
+        depth={PERFORMANCE.stars.innerDepth}
+        count={PERFORMANCE.stars.innerCount}
+        factor={PERFORMANCE.stars.size}
+        saturation={PERFORMANCE.stars.saturation}
+        fade={false}
+      />
+      <Stars
+        radius={PERFORMANCE.stars.outerRadius}
+        depth={PERFORMANCE.stars.outerDepth}
+        count={PERFORMANCE.stars.outerCount}
         factor={PERFORMANCE.stars.size}
         saturation={PERFORMANCE.stars.saturation}
         fade={false}
@@ -73,7 +129,10 @@ export default function Scene() {
       {/* Spaceship visible in fly mode */}
       <Spaceship />
 
-      {/* Camera controls based on mode */}
+      {/* Proximity detection for landing */}
+      <ProximityDetector />
+
+      {/* Camera controls (5x scale) */}
       {cameraMode === 'orbit' && (
         <OrbitControls
           enablePan={true}
@@ -82,8 +141,8 @@ export default function Scene() {
           zoomSpeed={0.5}
           panSpeed={0.5}
           rotateSpeed={0.3}
-          minDistance={50}
-          maxDistance={50000}
+          minDistance={250}
+          maxDistance={250000}
         />
       )}
 

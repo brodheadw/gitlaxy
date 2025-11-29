@@ -12,7 +12,7 @@ export default function FPSCounter() {
   const [fps, setFps] = useState(60)
   const frameCount = useRef(0)
   const lastTime = useRef(performance.now())
-  const frameRef = useRef<number>()
+  const frameRef = useRef<number>(0)
 
   useEffect(() => {
     const updateFPS = () => {

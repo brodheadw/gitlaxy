@@ -138,11 +138,8 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
         if (document.pointerLockElement === gl.domElement) {
           document.exitPointerLock()
         }
-        // Only exit fly mode if settings menu is not open
-        // (let SettingsMenu handle closing itself first)
-        if (!showSettings) {
-          setCameraMode('orbit')
-        }
+        // Don't automatically switch to orbit mode - stay in fly mode
+        // User can manually switch camera mode via HUD if needed
         return
       }
 

@@ -3,8 +3,10 @@
 /**
  * Base multiplier for mouse sensitivity calculations.
  * This value is applied before preset and user sensitivity multipliers.
+ * Range: 0.004 (original, very slow) to 0.5 (very fast)
+ * Recommended: 0.02-0.05 for responsive but controllable flight
  */
-export const MOUSE_SENSITIVITY_BASE = 0.5
+export const MOUSE_SENSITIVITY_BASE = 0.035
 
 export interface ControlPreset {
   name: string

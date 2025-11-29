@@ -185,10 +185,11 @@ class OctreeNode {
 
 export class Octree {
   root: OctreeNode
-  private temp = {
-    vector: new THREE.Vector3(),
-    box: new THREE.Box3(),
-  }
+  // Unused temp objects for potential future optimizations
+  // private temp = {
+  //   vector: new THREE.Vector3(),
+  //   box: new THREE.Box3(),
+  // }
 
   constructor(bounds: THREE.Box3, maxObjects = 8, maxDepth = 8) {
     this.root = new OctreeNode(bounds, maxObjects, maxDepth)
