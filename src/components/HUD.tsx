@@ -3,7 +3,7 @@ import type { ShipType } from '../store'
 import { SHIP_INFO } from './Spaceship'
 import './HUD.css'
 
-const SHIP_TYPES: ShipType[] = ['falcon', 'viper', 'hauler', 'explorer']
+const SHIP_TYPES: ShipType[] = ['falcon', 'viper', 'hauler', 'explorer', 'custom']
 
 export default function HUD() {
   const {
@@ -97,6 +97,18 @@ export default function HUD() {
             onClick={() => setShowSettings(true)}
           >
             ⚙ Settings
+          </button>
+
+          <button
+            className="shutdown-btn"
+            onClick={() => {
+              if (window.confirm('Are you sure you want to exit Gitlaxy?')) {
+                window.close()
+              }
+            }}
+            title="Exit Application"
+          >
+            ⏻ Exit
           </button>
         </div>
       </div>

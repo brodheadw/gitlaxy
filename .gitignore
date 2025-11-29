@@ -23,4 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
+# Original unoptimized spaceship model
+public/Spacyship 3D Model.glb
+
 CLAUDE.md
+.claude

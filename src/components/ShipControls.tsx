@@ -1,11 +1,12 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { useStore } from '../store'
+import { useStore, type ShipType } from '../store'
 import { DEFAULT_CONTROLS, MOUSE_SENSITIVITY_BASE, type ControlSettings } from '../config/controls'
 import { PERFORMANCE } from '../config/performance'
 import { useFrameThrottle } from '../hooks/useFrameThrottle'
 
+<<<<<<< HEAD
 // NMS-style flight configuration factory (5x scale for immersive universe)
 const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS) => ({
   // Speed settings (units per second) - 5x for larger universe
@@ -13,6 +14,17 @@ const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS) => ({
   normalSpeed: 1000,
   maxSpeed: 15000,
   boostSpeed: 15000,
+=======
+// NMS-style flight configuration factory
+const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS, shipType: ShipType = 'falcon') => {
+  const maxSpeed = PERFORMANCE.ship.maxSpeed[shipType]
+  return {
+    // Speed settings (units per second)
+    minSpeed: -300,
+    normalSpeed: 200,
+    maxSpeed,
+    boostSpeed: maxSpeed,
+>>>>>>> origin/main
 
   // Acceleration/deceleration - uses control preset values
   acceleration: controls.acceleration,
@@ -37,7 +49,8 @@ const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS) => ({
   mouseSensitivity: MOUSE_SENSITIVITY_BASE * PERFORMANCE.ship.controls.mouseSensitivity * controls.mouseSensitivity,
   invertY: controls.invertY,
   invertX: controls.invertX,
-})
+  }
+}
 
 interface ShipControlsProps {
   controlSettings?: ControlSettings
@@ -52,6 +65,7 @@ const FLIGHT_KEYS = new Set([
 
 export default function ShipControls({ controlSettings }: ShipControlsProps) {
   const { camera, gl } = useThree()
+<<<<<<< HEAD
   const {
     cameraMode,
     setCameraMode,
@@ -63,9 +77,15 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
     nearestPlanet,
     initiateLanding,
   } = useStore()
+=======
+  const { cameraMode, setCameraMode, keysPressed, setKeyPressed, updateFlightState, showSettings, selectedShip } = useStore()
+>>>>>>> origin/main
 
-  // Create flight config from control settings
-  const cfg = createFlightConfig(controlSettings)
+  // Create flight config from control settings and ship type - recalculate when settings change
+  const cfg = useMemo(() => createFlightConfig(controlSettings, selectedShip), [controlSettings, selectedShip])
+
+  // Get physics curves (use defaults if not provided)
+  const physics = useMemo(() => controlSettings?.physicsCurves || DEFAULT_CONTROLS.physicsCurves, [controlSettings])
 
   // Use refs for landing state to avoid effect re-runs releasing pointer lock
   const landingStateRef = useRef(landingState)
@@ -83,12 +103,25 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
   // Flight state
   const currentSpeed = useRef(cfg.minSpeed)
   const isBoosting = useRef(false)
+  const wasBoostingLastFrame = useRef(false)
+  const boostEndTime = useRef(0)
+
+  // Thrust buildup state
+  const thrustBuildupProgress = useRef(0)
+  const boostWindupProgress = useRef(0)
 
   // Rotation state for smooth interpolation
   const currentYawVelocity = useRef(0)
   const currentPitchVelocity = useRef(0)
   const currentRollVelocity = useRef(0)
   const autoBankAngle = useRef(0)
+
+  // Target rotation velocities for inertia
+  const targetYawVelocity = useRef(0)
+  const targetPitchVelocity = useRef(0)
+
+  // Previous yaw for counter-banking
+  const previousYawVelocity = useRef(0)
 
   // Mouse input accumulator
   const mouseInput = useRef({ x: 0, y: 0 })
@@ -104,9 +137,16 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
     if (cameraMode === 'fly') {
       currentSpeed.current = 0  // Start stationary
       isBoosting.current = false
+      wasBoostingLastFrame.current = false
+      boostEndTime.current = 0
+      thrustBuildupProgress.current = 0
+      boostWindupProgress.current = 0
       currentYawVelocity.current = 0
       currentPitchVelocity.current = 0
       currentRollVelocity.current = 0
+      targetYawVelocity.current = 0
+      targetPitchVelocity.current = 0
+      previousYawVelocity.current = 0
       autoBankAngle.current = 0
       mouseInput.current = { x: 0, y: 0 }
     }
@@ -135,11 +175,8 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
         if (document.pointerLockElement === gl.domElement) {
           document.exitPointerLock()
         }
-        // Only exit fly mode if settings menu is not open
-        // (let SettingsMenu handle closing itself first)
-        if (!showSettings) {
-          setCameraMode('orbit')
-        }
+        // Don't automatically switch to orbit mode - stay in fly mode
+        // User can manually switch camera mode via HUD if needed
         return
       }
 
@@ -205,29 +242,72 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
     // Update boost state
     isBoosting.current = wantsBoost && isThrusting
 
-    // --- SPEED MANAGEMENT ---
+    // Track boost momentum for decay
+    if (isBoosting.current && !wasBoostingLastFrame.current) {
+      boostEndTime.current = 0
+    } else if (!isBoosting.current && wasBoostingLastFrame.current) {
+      boostEndTime.current = Date.now() / 1000
+    }
+    wasBoostingLastFrame.current = isBoosting.current
 
-    // Only change speed when keys are pressed - maintain current speed otherwise
+    // --- SPEED MANAGEMENT WITH PHYSICS CURVES ---
+
+    // Calculate thrust buildup (gradual acceleration ramp)
+    if (isThrusting) {
+      thrustBuildupProgress.current = Math.min(1, thrustBuildupProgress.current + dt / physics.thrustBuildupTime)
+    } else {
+      thrustBuildupProgress.current = Math.max(0, thrustBuildupProgress.current - dt / (physics.thrustBuildupTime * 0.5))
+    }
+
+    // Calculate boost windup (delay before full boost)
     if (isBoosting.current) {
-      // Boosting - accelerate toward boost speed
+      boostWindupProgress.current = Math.min(1, boostWindupProgress.current + dt / physics.boostWindupTime)
+    } else {
+      boostWindupProgress.current = 0
+    }
+
+    // Apply easing curve to thrust buildup (starts slow, accelerates)
+    const thrustCurve = thrustBuildupProgress.current * thrustBuildupProgress.current
+
+    // Apply acceleration with curves
+    if (isBoosting.current) {
+      // Boosting - accelerate toward boost speed with windup
+      const boostMultiplier = 3 * boostWindupProgress.current
       const speedDiff = cfg.boostSpeed - currentSpeed.current
       if (speedDiff > 0) {
-        currentSpeed.current += Math.min(cfg.acceleration * 3 * dt, speedDiff)
+        currentSpeed.current += Math.min(cfg.acceleration * boostMultiplier * thrustCurve * dt, speedDiff)
       }
     } else if (isThrusting) {
-      // W key - accelerate toward max speed (capped at maxSpeed without boost)
+      // W key - accelerate toward max speed with buildup curve
       if (currentSpeed.current < cfg.maxSpeed) {
         const speedDiff = cfg.maxSpeed - currentSpeed.current
-        currentSpeed.current += Math.min(cfg.acceleration * dt, speedDiff)
+        currentSpeed.current += Math.min(cfg.acceleration * thrustCurve * dt, speedDiff)
       }
     } else if (isBraking) {
       // S key - decelerate (can go into reverse)
       currentSpeed.current -= cfg.brakeForce * dt
-    }
-    // No keys pressed = maintain current speed (no auto-cruise)
+    } else {
+      // DRIFT PHYSICS - ship retains momentum but gradually slows
+      const timeSinceBoostEnd = boostEndTime.current > 0 ? (Date.now() / 1000 - boostEndTime.current) : 999
 
-    // Snap to zero when close (makes it easy to stop)
-    if (Math.abs(currentSpeed.current) < 15 && !isThrusting && !isBraking) {
+      // Exponential decay after boost ends
+      if (timeSinceBoostEnd < physics.boostMomentumDecay) {
+        const decayProgress = timeSinceBoostEnd / physics.boostMomentumDecay
+        const decayMultiplier = Math.pow(1 - decayProgress, physics.decelerationCurve)
+        const targetSpeed = cfg.maxSpeed * physics.driftRetention
+        currentSpeed.current = THREE.MathUtils.lerp(currentSpeed.current, targetSpeed, dt * 0.5 * (1 - decayMultiplier))
+      }
+
+      // Apply friction (gradual slowdown)
+      if (currentSpeed.current > 0) {
+        currentSpeed.current -= currentSpeed.current * physics.frictionCoefficient * dt
+      } else if (currentSpeed.current < 0) {
+        currentSpeed.current -= currentSpeed.current * physics.frictionCoefficient * dt
+      }
+    }
+
+    // Snap to zero when close (prevents endless drift)
+    if (Math.abs(currentSpeed.current) < 5 && !isThrusting && !isBraking) {
       currentSpeed.current = 0
     }
 
@@ -251,7 +331,7 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
       )
     }
 
-    // --- ROTATION FROM MOUSE ---
+    // --- ROTATION FROM MOUSE - LINEAR (NO ACCELERATION) ---
 
     // Consume accumulated mouse input with inversion support
     const mouseX = mouseInput.current.x * cfg.mouseSensitivity * (cfg.invertX ? -1 : 1)
@@ -259,14 +339,16 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
     mouseInput.current.x = 0
     mouseInput.current.y = 0
 
-    // Apply agility to mouse input
-    const effectiveYaw = mouseX * cfg.baseYawRate * agilityMultiplier
-    const effectivePitch = mouseY * cfg.basePitchRate * agilityMultiplier
-
-    // Smooth the rotation velocities
-    const rotationSmoothing = 8
-    currentYawVelocity.current += (effectiveYaw - currentYawVelocity.current) * Math.min(rotationSmoothing * dt, 1)
-    currentPitchVelocity.current += (effectivePitch - currentPitchVelocity.current) * Math.min(rotationSmoothing * dt, 1)
+    // Apply mouse input directly to rotation velocities (linear, no inertia)
+    const hasMouseInput = Math.abs(mouseX) > 0.001 || Math.abs(mouseY) > 0.001
+    if (hasMouseInput) {
+      currentYawVelocity.current = mouseX * cfg.baseYawRate * agilityMultiplier
+      currentPitchVelocity.current = mouseY * cfg.basePitchRate * agilityMultiplier
+    } else {
+      // Instantly stop rotation when no mouse input
+      currentYawVelocity.current = 0
+      currentPitchVelocity.current = 0
+    }
 
     // --- MANUAL ROLL (A/D keys) ---
 
@@ -277,11 +359,31 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
     // Smooth roll
     currentRollVelocity.current += (targetRollVelocity - currentRollVelocity.current) * Math.min(6 * dt, 1)
 
-    // --- AUTO-BANKING ---
+    // --- NATURAL BANKING BEHAVIOR ---
 
-    // Auto-bank based on yaw velocity (ship tilts into turns)
-    const targetBankAngle = -currentYawVelocity.current * cfg.autoBankStrength * 20
-    autoBankAngle.current += (targetBankAngle - autoBankAngle.current) * Math.min(cfg.autoBankSpeed * dt, 1)
+    // Calculate speed-dependent bank multiplier (faster = sharper banks)
+    const speedNormalized = Math.abs(currentSpeed.current) / cfg.maxSpeed
+    const speedBankMultiplier = 1 + (speedNormalized * physics.bankSpeedMultiplier)
+
+    // Lead-in banking (anticipatory - banks slightly before full turn)
+    const leadInBank = targetYawVelocity.current * physics.bankLeadIn * speedBankMultiplier
+
+    // Counter-banking (opposite bank when stopping a turn)
+    const yawChange = currentYawVelocity.current - previousYawVelocity.current
+    const counterBank = -yawChange * physics.counterBankStrength * 50
+
+    // Main auto-bank based on current yaw velocity
+    const mainBank = -currentYawVelocity.current * cfg.autoBankStrength * 20 * speedBankMultiplier
+
+    // Combine all banking factors
+    const targetBankAngle = mainBank + leadInBank + counterBank
+
+    // Smooth bank recovery with configurable time
+    const bankRecoveryRate = 1 / physics.bankRecoveryTime
+    autoBankAngle.current += (targetBankAngle - autoBankAngle.current) * Math.min(bankRecoveryRate * dt, 1)
+
+    // Store previous yaw for next frame's counter-banking calculation
+    previousYawVelocity.current = currentYawVelocity.current
 
     // --- APPLY ROTATIONS ---
 

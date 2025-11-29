@@ -204,6 +204,13 @@ export const PERFORMANCE = {
 
   // Ship controls
   ship: {
+    maxSpeed: {
+      falcon: 1800,
+      viper: 2200,
+      hauler: 1400,
+      explorer: 1600,
+      custom: 1800,
+    },
     controls: {
       updateFrequency: 1,
       mouseSensitivity: 1.0,

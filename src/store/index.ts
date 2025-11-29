@@ -6,7 +6,11 @@ import { DEFAULT_CONTROLS, type ControlSettings } from '../config/controls'
 export type ViewMode = 'explore' | 'history'
 export type CameraMode = 'orbit' | 'fly'
 export type ViewLevel = 'galaxy' | 'system' // galaxy = all systems, system = inside one folder
+<<<<<<< HEAD
 export type ShipType = 'falcon' | 'viper' | 'hauler' | 'explorer'
+=======
+export type ShipType = 'falcon' | 'viper' | 'hauler' | 'explorer' | 'custom'
+>>>>>>> origin/main
 export type LandingState = 'flying' | 'approaching' | 'landed'
 
 // Info about the nearest planet for landing
@@ -65,6 +69,18 @@ interface RepoState {
   // Settings state
   showSettings: boolean
   controlSettings: ControlSettings
+  showFPS: boolean
+
+  // Landing state
+  landingState: LandingState
+  landingTarget: FileNode | null
+  nearestPlanet: NearestPlanetInfo | null
+
+  // Editor state
+  isEditorOpen: boolean
+  editorContent: string | null
+  hasUnsavedChanges: boolean
+  editorError: string | null
 
   // Landing state
   landingState: LandingState
@@ -115,6 +131,10 @@ interface RepoState {
   // Settings actions
   setShowSettings: (show: boolean) => void
   setControlSettings: (settings: ControlSettings) => void
+<<<<<<< HEAD
+=======
+  setShowFPS: (show: boolean) => void
+>>>>>>> origin/main
 
   // Landing actions
   setLandingState: (state: LandingState) => void
@@ -143,7 +163,7 @@ export const useStore = create<RepoState>((set, get) => ({
   targetPosition: null,
 
   viewMode: 'explore',
-  cameraMode: 'orbit',
+  cameraMode: 'fly',
   selectedNode: null,
   hoveredNode: null,
   camera: {
@@ -157,7 +177,7 @@ export const useStore = create<RepoState>((set, get) => ({
   playbackSpeed: 1,
 
   keysPressed: new Set(),
-  selectedShip: 'falcon',
+  selectedShip: 'custom', // Changed from 'falcon' to test custom ship
   flightState: {
     speed: 0,
     isBoosting: false,
@@ -169,6 +189,18 @@ export const useStore = create<RepoState>((set, get) => ({
 
   showSettings: false,
   controlSettings: DEFAULT_CONTROLS,
+  showFPS: false,
+
+  // Landing state
+  landingState: 'flying',
+  landingTarget: null,
+  nearestPlanet: null,
+
+  // Editor state
+  isEditorOpen: false,
+  editorContent: null,
+  hasUnsavedChanges: false,
+  editorError: null,
 
   // Landing state
   landingState: 'flying',
@@ -301,6 +333,10 @@ export const useStore = create<RepoState>((set, get) => ({
   // Settings actions
   setShowSettings: (showSettings) => set({ showSettings }),
   setControlSettings: (controlSettings) => set({ controlSettings }),
+<<<<<<< HEAD
+=======
+  setShowFPS: (showFPS) => set({ showFPS }),
+>>>>>>> origin/main
 
   // Landing actions
   setLandingState: (landingState) => set({ landingState }),
@@ -311,11 +347,16 @@ export const useStore = create<RepoState>((set, get) => ({
     set({
       landingState: 'landed',
       landingTarget: planet,
+<<<<<<< HEAD
       cameraMode: 'orbit', // Exit fly mode when landing
       isEditorOpen: true, // Open the editor
       editorContent: null, // Will be loaded by Editor component
       hasUnsavedChanges: false,
       editorError: null,
+=======
+      cameraMode: 'orbit', // Switch to orbit mode when landed
+      isEditorOpen: true,
+>>>>>>> origin/main
     })
   },
 
@@ -323,16 +364,24 @@ export const useStore = create<RepoState>((set, get) => ({
     set({
       landingState: 'flying',
       landingTarget: null,
+<<<<<<< HEAD
       nearestPlanet: null,
+=======
+>>>>>>> origin/main
       isEditorOpen: false,
       editorContent: null,
       hasUnsavedChanges: false,
       editorError: null,
+<<<<<<< HEAD
       cameraMode: 'fly', // Return to fly mode after takeoff
+=======
+      cameraMode: 'fly', // Return to fly mode
+>>>>>>> origin/main
     })
   },
 
   // Editor actions
+<<<<<<< HEAD
   openEditor: (content) => set({
     isEditorOpen: true,
     editorContent: content,
@@ -355,6 +404,36 @@ export const useStore = create<RepoState>((set, get) => ({
   }),
 
   setEditorError: (editorError) => set({ editorError }),
+=======
+  openEditor: (content) => {
+    set({
+      isEditorOpen: true,
+      editorContent: content,
+      hasUnsavedChanges: false,
+      editorError: null,
+    })
+  },
+
+  closeEditor: () => {
+    set({
+      isEditorOpen: false,
+      editorContent: null,
+      hasUnsavedChanges: false,
+      editorError: null,
+    })
+  },
+
+  setEditorContent: (content) => {
+    const { editorContent } = get()
+    set({
+      editorContent: content,
+      hasUnsavedChanges: content !== editorContent,
+    })
+  },
+
+  setEditorError: (editorError) => set({ editorError }),
+
+>>>>>>> origin/main
   setHasUnsavedChanges: (hasUnsavedChanges) => set({ hasUnsavedChanges }),
 }))
 
@@ -382,7 +461,11 @@ export const useLandingState = () => useStore((s) => s.landingState)
 export const useLandingTarget = () => useStore((s) => s.landingTarget)
 export const useNearestPlanet = () => useStore((s) => s.nearestPlanet)
 
+<<<<<<< HEAD
 // Editor state selectors - use individual selectors to avoid infinite loops
+=======
+// Editor state selectors
+>>>>>>> origin/main
 export const useIsEditorOpen = () => useStore((s) => s.isEditorOpen)
 export const useEditorContent = () => useStore((s) => s.editorContent)
 export const useEditorHasUnsavedChanges = () => useStore((s) => s.hasUnsavedChanges)

@@ -8,7 +8,7 @@ import {
 } from '../config/controls'
 
 export default function SettingsMenu() {
-  const { showSettings, setShowSettings, controlSettings, setControlSettings } = useStore()
+  const { showSettings, setShowSettings, controlSettings, setControlSettings, showFPS, setShowFPS } = useStore()
   const [controls, setControls] = useState<ControlSettings>(controlSettings)
 
   // Sync local state with store when menu opens
@@ -177,6 +177,20 @@ export default function SettingsMenu() {
               <span>Invert X-Axis</span>
             </label>
           </div>
+        </div>
+
+        {/* Display Options */}
+        <div style={{ marginBottom: '25px' }}>
+          <h3 style={{ color: '#00ffcc', fontSize: '14px', marginBottom: '10px' }}>Display</h3>
+          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={showFPS}
+              onChange={() => setShowFPS(!showFPS)}
+              style={{ marginRight: '8px', cursor: 'pointer', width: '16px', height: '16px' }}
+            />
+            <span>Show FPS Counter</span>
+          </label>
         </div>
 
         {/* Advanced Settings */}
