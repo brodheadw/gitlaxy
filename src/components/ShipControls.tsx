@@ -6,6 +6,15 @@ import { DEFAULT_CONTROLS, MOUSE_SENSITIVITY_BASE, type ControlSettings } from '
 import { PERFORMANCE } from '../config/performance'
 import { useFrameThrottle } from '../hooks/useFrameThrottle'
 
+<<<<<<< HEAD
+// NMS-style flight configuration factory (5x scale for immersive universe)
+const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS) => ({
+  // Speed settings (units per second) - 5x for larger universe
+  minSpeed: -1500,
+  normalSpeed: 1000,
+  maxSpeed: 15000,
+  boostSpeed: 15000,
+=======
 // NMS-style flight configuration factory
 const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS, shipType: ShipType = 'falcon') => {
   const maxSpeed = PERFORMANCE.ship.maxSpeed[shipType]
@@ -15,6 +24,7 @@ const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS, shipTy
     normalSpeed: 200,
     maxSpeed,
     boostSpeed: maxSpeed,
+>>>>>>> origin/main
 
   // Acceleration/deceleration - uses control preset values
   acceleration: controls.acceleration,
@@ -55,13 +65,40 @@ const FLIGHT_KEYS = new Set([
 
 export default function ShipControls({ controlSettings }: ShipControlsProps) {
   const { camera, gl } = useThree()
+<<<<<<< HEAD
+  const {
+    cameraMode,
+    setCameraMode,
+    keysPressed,
+    setKeyPressed,
+    updateFlightState,
+    showSettings,
+    landingState,
+    nearestPlanet,
+    initiateLanding,
+  } = useStore()
+=======
   const { cameraMode, setCameraMode, keysPressed, setKeyPressed, updateFlightState, showSettings, selectedShip } = useStore()
+>>>>>>> origin/main
 
   // Create flight config from control settings and ship type - recalculate when settings change
   const cfg = useMemo(() => createFlightConfig(controlSettings, selectedShip), [controlSettings, selectedShip])
 
   // Get physics curves (use defaults if not provided)
   const physics = useMemo(() => controlSettings?.physicsCurves || DEFAULT_CONTROLS.physicsCurves, [controlSettings])
+
+  // Use refs for landing state to avoid effect re-runs releasing pointer lock
+  const landingStateRef = useRef(landingState)
+  const nearestPlanetRef = useRef(nearestPlanet)
+
+  // Keep refs updated
+  useEffect(() => {
+    landingStateRef.current = landingState
+  }, [landingState])
+
+  useEffect(() => {
+    nearestPlanetRef.current = nearestPlanet
+  }, [nearestPlanet])
 
   // Flight state
   const currentSpeed = useRef(cfg.minSpeed)
@@ -143,6 +180,20 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
         return
       }
 
+      // E key - initiate landing when approaching a planet
+      if (event.code === 'KeyE') {
+        event.preventDefault()
+        // Use refs to get current values without triggering effect re-runs
+        if (landingStateRef.current === 'approaching' && nearestPlanetRef.current) {
+          // Exit pointer lock before landing
+          if (document.pointerLockElement === gl.domElement) {
+            document.exitPointerLock()
+          }
+          initiateLanding(nearestPlanetRef.current.node)
+        }
+        return
+      }
+
       // Register flight control keys
       if (FLIGHT_KEYS.has(event.code)) {
         event.preventDefault()
@@ -156,30 +207,21 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
       }
     }
 
-    const onPointerLockChange = () => {
-      if (document.pointerLockElement !== gl.domElement) {
-        document.body.style.cursor = 'default'
-      }
-    }
-
     document.addEventListener('mousemove', onMouseMove)
     document.addEventListener('keydown', onKeyDown)
     document.addEventListener('keyup', onKeyUp)
-    document.addEventListener('pointerlockchange', onPointerLockChange)
     gl.domElement.addEventListener('click', onClick)
 
     return () => {
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('keydown', onKeyDown)
       document.removeEventListener('keyup', onKeyUp)
-      document.removeEventListener('pointerlockchange', onPointerLockChange)
       gl.domElement.removeEventListener('click', onClick)
       if (document.pointerLockElement === gl.domElement) {
         document.exitPointerLock()
       }
-      document.body.style.cursor = 'default'
     }
-  }, [camera, gl.domElement, cameraMode, setCameraMode, setKeyPressed, showSettings])
+  }, [camera, gl.domElement, cameraMode, setCameraMode, setKeyPressed, showSettings, initiateLanding])
 
   useFrame((_, delta) => {
     if (cameraMode !== 'fly') return
@@ -195,7 +237,7 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
     const isBraking = keysPressed.has('KeyS') || keysPressed.has('ArrowDown')
     const isRollingLeft = keysPressed.has('KeyA') || keysPressed.has('ArrowLeft')
     const isRollingRight = keysPressed.has('KeyD') || keysPressed.has('ArrowRight')
-    const wantsBoost = keysPressed.has('ShiftLeft') || keysPressed.has('ShiftRight') || keysPressed.has('KeyE')
+    const wantsBoost = keysPressed.has('ShiftLeft') || keysPressed.has('ShiftRight')
 
     // Update boost state
     isBoosting.current = wantsBoost && isThrusting

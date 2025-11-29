@@ -17,13 +17,13 @@ export interface ControlPreset {
   rollRate: number
 }
 
-// Predefined control presets
+// Predefined control presets (5x acceleration for larger universe)
 export const CONTROL_PRESETS: Record<string, ControlPreset> = {
   casual: {
     name: 'Casual',
     description: 'Relaxed, easy flying',
     mouseSensitivity: 0.5,
-    acceleration: 100,
+    acceleration: 500,
     turnRate: 2.0,
     rollRate: 2.0,
   },
@@ -31,7 +31,7 @@ export const CONTROL_PRESETS: Record<string, ControlPreset> = {
     name: 'Standard',
     description: 'Balanced controls',
     mouseSensitivity: 1.0,
-    acceleration: 150,
+    acceleration: 750,
     turnRate: 1.5,
     rollRate: 2.5,
   },
@@ -39,7 +39,7 @@ export const CONTROL_PRESETS: Record<string, ControlPreset> = {
     name: 'Responsive',
     description: 'Quick and agile',
     mouseSensitivity: 1.5,
-    acceleration: 200,
+    acceleration: 1000,
     turnRate: 1.8,
     rollRate: 3.0,
   },
@@ -47,7 +47,7 @@ export const CONTROL_PRESETS: Record<string, ControlPreset> = {
     name: 'Expert',
     description: 'High precision flying',
     mouseSensitivity: 2.0,
-    acceleration: 250,
+    acceleration: 1250,
     turnRate: 2.2,
     rollRate: 3.5,
   },
@@ -107,22 +107,22 @@ export interface ControlSettings {
   physicsCurves: PhysicsCurves
 }
 
-// Default control settings
+// Default control settings (5x scale for larger universe)
 export const DEFAULT_CONTROLS: ControlSettings = {
   preset: 'standard',
   mouseSensitivity: 1.0,
   invertY: false,
   invertX: false,
-  acceleration: 150,
-  deceleration: 100,
-  brakeForce: 300,
+  acceleration: 750,
+  deceleration: 500,
+  brakeForce: 1500,
   turnRate: 1.5,
   rollRate: 2.5,
   autoBankStrength: 0.4,
   physicsCurves: DEFAULT_PHYSICS_CURVES,
 }
 
-// Apply a preset to control settings
+// Apply a preset to control settings (5x scale for larger universe)
 export function applyPreset(preset: keyof typeof CONTROL_PRESETS): ControlSettings {
   const presetConfig = CONTROL_PRESETS[preset]
   return {
@@ -131,8 +131,8 @@ export function applyPreset(preset: keyof typeof CONTROL_PRESETS): ControlSettin
     invertY: false,
     invertX: false,
     acceleration: presetConfig.acceleration,
-    deceleration: 100,
-    brakeForce: 300,
+    deceleration: 500,
+    brakeForce: 1500,
     turnRate: presetConfig.turnRate,
     rollRate: presetConfig.rollRate,
     autoBankStrength: 0.4,

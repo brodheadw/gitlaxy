@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Sphere } from '@react-three/drei'
 import * as THREE from 'three'
@@ -10,6 +10,7 @@ import NodeLabel from './NodeLabel'
 import { PERFORMANCE } from '../config/performance'
 import { useNodeInteraction } from '../hooks/useNodeInteraction'
 import { useFrameThrottle } from '../hooks/useFrameThrottle'
+import { registerPlanet, unregisterPlanet } from '../hooks/useProximityDetection'
 
 interface SolarSystemProps {
   folder: FolderNode
@@ -76,6 +77,10 @@ function Sun({ folder, depth, totalChildren }: {
   const sunRef = useRef<THREE.Group>(null)
   const coronaRef = useRef<THREE.Mesh>(null)
   const { isHovered, handlers } = useNodeInteraction(folder)
+  const { cameraMode } = useStore()
+
+  // Disable raycasting during fly mode
+  const disableRaycast = cameraMode === 'fly'
 
   const starProps = useMemo(
     () => getStarProperties(depth, folder.children.length, totalChildren),
@@ -99,15 +104,17 @@ function Sun({ folder, depth, totalChildren }: {
 
   return (
     <group ref={sunRef}>
-      {/* Interaction mesh */}
-      <mesh
-        onClick={handlers.onClick}
-        onPointerOver={handlers.onPointerOver}
-        onPointerOut={handlers.onPointerOut}
-      >
-        <sphereGeometry args={[starProps.size * PERFORMANCE.folders.scale.interaction, PERFORMANCE.folders.geometry.interactionDetail, PERFORMANCE.folders.geometry.interactionDetail]} />
-        <meshBasicMaterial transparent opacity={0} />
-      </mesh>
+      {/* Interaction mesh - hidden during fly mode to prevent raycasting */}
+      {!disableRaycast && (
+        <mesh
+          onClick={handlers.onClick}
+          onPointerOver={handlers.onPointerOver}
+          onPointerOut={handlers.onPointerOut}
+        >
+          <sphereGeometry args={[starProps.size * PERFORMANCE.folders.scale.interaction, PERFORMANCE.folders.geometry.interactionDetail, PERFORMANCE.folders.geometry.interactionDetail]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      )}
 
       {/* Core sun sphere */}
       <Sphere args={[starProps.size, PERFORMANCE.folders.geometry.coreDetail, PERFORMANCE.folders.geometry.coreDetail]}>
@@ -176,9 +183,13 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
   startAngle: number
 }) {
   const planetRef = useRef<THREE.Group>(null)
+  const worldPos = useRef(new THREE.Vector3())
   const throttle = useFrameThrottle(PERFORMANCE.updates.orbitInterval)
   const { isHovered, handlers } = useNodeInteraction(file)
-  const { selectedNode } = useStore()
+  const { selectedNode, cameraMode } = useStore()
+
+  // Disable raycasting during fly mode
+  const disableRaycast = cameraMode === 'fly'
 
   const color = useMemo(() => new THREE.Color(getColorForExtension(file.extension)), [file.extension])
   const isSelected = selectedNode?.id === file.id
@@ -187,6 +198,14 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
   const cfg = PERFORMANCE.files
   const baseSize = cfg.sizing.baseSize + Math.log10(Math.max(file.size, cfg.sizing.minFileSize)) * cfg.sizing.sizeMultiplier
 
+<<<<<<< HEAD
+  // Register planet for proximity detection
+  useEffect(() => {
+    return () => {
+      unregisterPlanet(file.id)
+    }
+  }, [file.id])
+=======
   // Pre-calculate orbit path points
   const orbitPath = useMemo(() => {
     const points = 120 // One point per 3 degrees
@@ -203,11 +222,25 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
   }, [orbitRadius])
 
   const angleRef = useRef(startAngle)
+>>>>>>> origin/main
 
   useFrame((state) => {
     if (!planetRef.current) return
     if (!throttle.shouldUpdate()) return
 
+<<<<<<< HEAD
+    // Orbit around sun (freeze when orbit animation toggle is off)
+    const angle = startAngle + (PERFORMANCE.toggles.orbitAnimation ? time * orbitSpeed * PERFORMANCE.files.animation.orbitUpdate : 0)
+    planetRef.current.position.x = Math.cos(angle) * orbitRadius
+    planetRef.current.position.z = Math.sin(angle) * orbitRadius
+    planetRef.current.position.y = PERFORMANCE.toggles.orbitAnimation
+      ? Math.sin(angle * cfg.animation.wobbleSpeed) * orbitRadius * cfg.animation.wobbleFactor
+      : 0
+
+    // Update world position for proximity detection
+    planetRef.current.getWorldPosition(worldPos.current)
+    registerPlanet(file.id, file, worldPos.current, baseSize)
+=======
     if (PERFORMANCE.toggles.orbitAnimation) {
       // Advance angle over time
       const time = state.clock.elapsedTime
@@ -231,19 +264,22 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
       planetRef.current.position.z = Math.sin(startAngle) * orbitRadius
       planetRef.current.position.y = 0
     }
+>>>>>>> origin/main
   })
 
   return (
     <group ref={planetRef}>
-      {/* Interaction mesh */}
-      <mesh
-        onClick={handlers.onClick}
-        onPointerOver={handlers.onPointerOver}
-        onPointerOut={handlers.onPointerOut}
-      >
-        <sphereGeometry args={[baseSize * cfg.visual.interactionScale, cfg.geometry.interactionDetail, cfg.geometry.interactionDetail]} />
-        <meshBasicMaterial transparent opacity={0} />
-      </mesh>
+      {/* Interaction mesh - hidden during fly mode to prevent raycasting */}
+      {!disableRaycast && (
+        <mesh
+          onClick={handlers.onClick}
+          onPointerOver={handlers.onPointerOver}
+          onPointerOut={handlers.onPointerOut}
+        >
+          <sphereGeometry args={[baseSize * cfg.visual.interactionScale, cfg.geometry.interactionDetail, cfg.geometry.interactionDetail]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      )}
 
       {/* Procedural planet */}
       <ProceduralPlanet
