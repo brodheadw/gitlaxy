@@ -1,0 +1,209 @@
+.arming-switch {
+    position: relative;
+    width: 240px;
+    height: 240px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    overflow: visible;
+    transition: transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Pulse background - breathing effect synced to star */
+.pulse-bg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(78, 205, 196, 0.15) 0%, rgba(78, 205, 196, 0.05) 50%, transparent 100%);
+    border-radius: 50%;
+    animation: breathe 3s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes breathe {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+}
+
+/* Charge ring SVG */
+.charge-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    pointer-events: none;
+}
+
+.charge-ring-bg {
+    fill: none;
+    stroke: rgba(78, 205, 196, 0.1);
+    stroke-width: 3;
+}
+
+.charge-ring-progress {
+    fill: none;
+    stroke: #4ecdc4;
+    stroke-width: 4;
+    stroke-dasharray: 283;
+    stroke-dashoffset: 283;
+    transition: stroke-dashoffset 0.016s linear, stroke-width 0.2s ease;
+    filter: drop-shadow(0 0 8px rgba(78, 205, 196, 0.8));
+}
+
+/* Charging state - make ring glow more */
+.arming-switch.charging .charge-ring-progress {
+    stroke-width: 5;
+    filter: drop-shadow(0 0 12px rgba(78, 205, 196, 1));
+    animation: pulse-glow 0.5s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 12px rgba(78, 205, 196, 1));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 20px rgba(78, 205, 196, 1));
+    }
+}
+
+/* Button text */
+.button-text {
+    position: relative;
+    z-index: 2;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #4ecdc4;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-align: center;
+    max-width: 140px;
+    line-height: 1.2;
+    text-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+    transition: all 0.3s ease;
+}
+
+.arming-switch:hover .button-text {
+    color: #fff;
+    text-shadow: 0 0 20px rgba(78, 205, 196, 1);
+}
+
+.arming-switch.charging .button-text {
+    color: #fff;
+    transform: scale(1.05);
+}
+
+/* Violent shake at 90%+ charge */
+.arming-switch.shaking {
+    animation: violent-shake 0.1s infinite;
+}
+
+@keyframes violent-shake {
+
+    0%,
+    100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    10% {
+        transform: translate(calc(var(--shake-intensity) * -2px), calc(var(--shake-intensity) * 2px)) rotate(calc(var(--shake-intensity) * -0.5deg));
+    }
+
+    20% {
+        transform: translate(calc(var(--shake-intensity) * 2px), calc(var(--shake-intensity) * -1px)) rotate(calc(var(--shake-intensity) * 0.5deg));
+    }
+
+    30% {
+        transform: translate(calc(var(--shake-intensity) * -1px), calc(var(--shake-intensity) * 3px)) rotate(calc(var(--shake-intensity) * -0.8deg));
+    }
+
+    40% {
+        transform: translate(calc(var(--shake-intensity) * 3px), calc(var(--shake-intensity) * 1px)) rotate(calc(var(--shake-intensity) * 0.8deg));
+    }
+
+    50% {
+        transform: translate(calc(var(--shake-intensity) * -2px), calc(var(--shake-intensity) * -2px)) rotate(calc(var(--shake-intensity) * -1deg));
+    }
+
+    60% {
+        transform: translate(calc(var(--shake-intensity) * 1px), calc(var(--shake-intensity) * 2px)) rotate(calc(var(--shake-intensity) * 1deg));
+    }
+
+    70% {
+        transform: translate(calc(var(--shake-intensity) * -3px), calc(var(--shake-intensity) * -1px)) rotate(calc(var(--shake-intensity) * -0.6deg));
+    }
+
+    80% {
+        transform: translate(calc(var(--shake-intensity) * 2px), calc(var(--shake-intensity) * 3px)) rotate(calc(var(--shake-intensity) * 0.6deg));
+    }
+
+    90% {
+        transform: translate(calc(var(--shake-intensity) * -1px), calc(var(--shake-intensity) * -3px)) rotate(calc(var(--shake-intensity) * -0.4deg));
+    }
+}
+
+/* Bloom effect - white overexposure flash */
+.bloom-effect {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 400%;
+    height: 400%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(78, 205, 196, 0.8) 20%, transparent 50%);
+    animation: bloom-flash 0.4s ease-out forwards;
+    pointer-events: none;
+    z-index: 10;
+}
+
+@keyframes bloom-flash {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+
+    30% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(2);
+    }
+}
+
+/* Armed state */
+.arming-switch.armed .charge-ring-progress {
+    stroke: #00ff88;
+    stroke-width: 6;
+    filter: drop-shadow(0 0 20px rgba(0, 255, 136, 1));
+}
+
+.arming-switch.armed .button-text {
+    color: #00ff88;
+}
+
+/* Hover effects */
+.arming-switch:hover {
+    transform: scale(1.05);
+}
+
+.arming-switch:active {
+    transform: scale(0.98);
+}

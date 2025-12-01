@@ -1,20 +1,11 @@
 import { useGLTF } from '@react-three/drei'
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '../store'
 import type { ShipType } from '../store'
 import { PERFORMANCE } from '../config/performance'
-import { initializeDracoLoader, getDracoLoader } from '../utils/dracoLoader'
-import { disposeObject } from '../utils/disposeObject'
-
-// Start DRACO loader initialization immediately on module load
-// The singleton pattern in dracoLoader.ts ensures only one initialization happens
-// even if multiple components import this module
-const dracoLoaderPromise = initializeDracoLoader().catch(err => {
-  console.error('[Spaceship] Failed to initialize DRACOLoader:', err)
-  return null
-})
+import { getDracoLoader } from '../utils/dracoLoader'
 
 // Ship configuration for exhaust animations
 interface ExhaustRefs {
@@ -570,16 +561,6 @@ export default function Spaceship() {
     })
     }
   }, 1)
-
-  console.log('[Spaceship] Camera mode:', cameraMode, 'Selected ship:', selectedShip)
-
-  // TEMPORARILY DISABLED: Force render ship regardless of camera mode for debugging
-  // if (cameraMode !== 'fly') {
-  //   console.log('[Spaceship] Not in fly mode, returning null')
-  //   return null
-  // }
-
-  console.log('[Spaceship] Rendering ship...')
 
   const exhaustRefs: ExhaustRefs = {
     main: exhaustRef as React.RefObject<THREE.Mesh>,

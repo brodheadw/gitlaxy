@@ -28,7 +28,7 @@ function killProcessOnPort(port) {
           const pid = match[1];
           try {
             execSync(`taskkill /PID ${pid} /F`, { stdio: 'ignore' });
-            console.log(`✓ Killed process on port ${port} (PID: ${pid})`);
+            console.log(`Killed process on port ${port} (PID: ${pid})`);
           } catch (err) {
             // Process might already be dead
           }
@@ -42,7 +42,7 @@ function killProcessOnPort(port) {
       pids.forEach(pid => {
         try {
           execSync(`kill -9 ${pid}`, { stdio: 'ignore' });
-          console.log(`✓ Killed process on port ${port} (PID: ${pid})`);
+          console.log(`Killed process on port ${port} (PID: ${pid})`);
         } catch (err) {
           // Process might already be dead
         }
@@ -75,7 +75,7 @@ function killViteProcesses() {
           const pid = match[1];
           try {
             execSync(`kill -9 ${pid}`, { stdio: 'ignore' });
-            console.log(`✓ Killed Vite process (PID: ${pid})`);
+            console.log(`Killed Vite process (PID: ${pid})`);
           } catch (err) {
             // Process might already be dead
           }
@@ -88,7 +88,7 @@ function killViteProcesses() {
   }
 }
 
-console.log('🔍 Scanning for development servers...\n');
+console.log('Scanning for development servers...\n');
 
 // Kill processes on common ports
 console.log('Checking common development ports:');
@@ -97,5 +97,5 @@ PORTS_TO_CHECK.forEach(port => killProcessOnPort(port));
 console.log('\nChecking for Vite processes:');
 killViteProcesses();
 
-console.log('\n✅ Server cleanup complete!');
+console.log('\nServer cleanup complete!');
 console.log('All lingering localhost servers have been stopped.\n');

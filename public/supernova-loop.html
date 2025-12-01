@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<body style="margin:0;background:#000">
+<canvas id="c" width="960" height="540" style="width:100vw;height:100vh"></canvas>
+<script>
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+const frames = [];
+const frameCount = 30;
+
+// Generate 30 frames
+for(let i=0; i<frameCount; i++) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 960;
+  canvas.height = 540;
+  const c2 = canvas.getContext('2d');
+  
+  const t = (i/frameCount) * Math.PI * 2;
+  const cx = 480, cy = 270, r = 250;
+  
+  c2.fillStyle = '#000008';
+  c2.fillRect(0,0,960,540);
+  
+  const g = c2.createRadialGradient(cx,cy,0,cx,cy,r);
+  g.addColorStop(0,'#fff');
+  g.addColorStop(0.1+Math.sin(t)*0.05,'#fea');
+  g.addColorStop(0.3+Math.cos(t*1.5)*0.1,'#f84');
+  g.addColorStop(0.5,'#46f');
+  g.addColorStop(0.7,'#24a');
+  g.addColorStop(1,'#000');
+  c2.fillStyle = g;
+  c2.fillRect(0,0,960,540);
+  frames.push(canvas);
+}
+
+let f=0;
+setInterval(()=>{
+  ctx.drawImage(frames[f],0,0);
+  f=(f+1)%frameCount;
+}, 33);
+</script>
+</body>
+</html>

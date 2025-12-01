@@ -212,9 +212,9 @@ export function detectMemoryLeaks(renderer: THREE.WebGLRenderer): void {
 
   // Warn if counts are unusually high
   if (info.memory.geometries > 1000) {
-    console.warn('⚠️ High geometry count detected. Possible memory leak.')
+    console.warn('High geometry count detected. Possible memory leak.')
   }
   if (info.memory.textures > 500) {
-    console.warn('⚠️ High texture count detected. Possible memory leak.')
+    console.warn('High texture count detected. Possible memory leak.')
   }
 }

@@ -8,15 +8,30 @@ import {
 } from '../config/controls'
 
 export default function SettingsMenu() {
-  const { showSettings, setShowSettings, controlSettings, setControlSettings, showFPS, setShowFPS } = useStore()
+  const {
+    showSettings,
+    setShowSettings,
+    controlSettings,
+    setControlSettings,
+    showFPS,
+    setShowFPS,
+    renderDistanceMiles,
+    setRenderDistanceMiles,
+    nebulaRenderDistanceMiles,
+    setNebulaRenderDistanceMiles,
+  } = useStore()
   const [controls, setControls] = useState<ControlSettings>(controlSettings)
+  const [localRenderDistance, setLocalRenderDistance] = useState(renderDistanceMiles)
+  const [localNebulaDistance, setLocalNebulaDistance] = useState(nebulaRenderDistanceMiles)
 
   // Sync local state with store when menu opens
   useEffect(() => {
     if (showSettings) {
       setControls(controlSettings)
+      setLocalRenderDistance(renderDistanceMiles)
+      setLocalNebulaDistance(nebulaRenderDistanceMiles)
     }
-  }, [showSettings, controlSettings])
+  }, [showSettings, controlSettings, renderDistanceMiles, nebulaRenderDistanceMiles])
 
   // Handle ESC key to close settings
   useEffect(() => {
@@ -193,6 +208,49 @@ export default function SettingsMenu() {
           </label>
         </div>
 
+        {/* Performance Settings */}
+        <div style={{ marginBottom: '25px' }}>
+          <h3 style={{ color: '#00ffcc', fontSize: '14px', marginBottom: '12px' }}>Performance</h3>
+
+          {/* Solar System Render Distance */}
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px' }}>
+              Solar System Render Distance: {localRenderDistance} miles
+            </label>
+            <input
+              type="range"
+              min={50}
+              max={500}
+              step={10}
+              value={localRenderDistance}
+              onChange={(e) => setLocalRenderDistance(parseFloat(e.target.value))}
+              style={{ width: '100%', cursor: 'pointer' }}
+            />
+            <div style={{ fontSize: '10px', opacity: 0.7, marginTop: '4px' }}>
+              Lower values improve FPS by only rendering nearby objects
+            </div>
+          </div>
+
+          {/* Nebula Render Distance */}
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px' }}>
+              Nebula Render Distance: {localNebulaDistance} miles
+            </label>
+            <input
+              type="range"
+              min={50}
+              max={500}
+              step={10}
+              value={localNebulaDistance}
+              onChange={(e) => setLocalNebulaDistance(parseFloat(e.target.value))}
+              style={{ width: '100%', cursor: 'pointer' }}
+            />
+            <div style={{ fontSize: '10px', opacity: 0.7, marginTop: '4px' }}>
+              Background nebulae visible from this distance
+            </div>
+          </div>
+        </div>
+
         {/* Advanced Settings */}
         <div style={{ marginBottom: '25px' }}>
           <h3 style={{ color: '#00ffcc', fontSize: '14px', marginBottom: '12px' }}>Advanced</h3>
@@ -278,7 +336,11 @@ export default function SettingsMenu() {
             <div><span style={{ color: '#00ffcc' }}>S/ArrowDown:</span> Brake</div>
             <div><span style={{ color: '#00ffcc' }}>A/ArrowLeft:</span> Roll Left</div>
             <div><span style={{ color: '#00ffcc' }}>D/ArrowRight:</span> Roll Right</div>
-            <div><span style={{ color: '#00ffcc' }}>Shift/E:</span> Boost</div>
+            <div><span style={{ color: '#00ffcc' }}>Q:</span> Strafe Up</div>
+            <div><span style={{ color: '#00ffcc' }}>E:</span> Strafe Down</div>
+            <div><span style={{ color: '#00ffcc' }}>Z:</span> Strafe Left</div>
+            <div><span style={{ color: '#00ffcc' }}>C:</span> Strafe Right</div>
+            <div><span style={{ color: '#00ffcc' }}>Shift:</span> Boost</div>
             <div><span style={{ color: '#00ffcc' }}>ESC:</span> Exit Fly Mode</div>
           </div>
         </div>
@@ -304,6 +366,8 @@ export default function SettingsMenu() {
           <button
             onClick={() => {
               setControlSettings(controls)
+              setRenderDistanceMiles(localRenderDistance)
+              setNebulaRenderDistanceMiles(localNebulaDistance)
               setShowSettings(false)
             }}
             style={{

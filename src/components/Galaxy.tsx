@@ -17,9 +17,9 @@ interface SystemData {
 function layoutAllSystems(root: FolderNode): SystemData[] {
   const systems: SystemData[] = []
 
-  // Much larger spacing for the expanded galaxy
-  const BASE_SPACING = 3000
-  const DEPTH_SPACING = 2000
+  // Much larger spacing for the expanded galaxy (5x scale for immersive universe)
+  const BASE_SPACING = 15000
+  const DEPTH_SPACING = 10000
 
   function collectFolders(
     node: FolderNode,
@@ -39,15 +39,15 @@ function layoutAllSystems(root: FolderNode): SystemData[] {
       const radius = parentRadius + BASE_SPACING + depth * DEPTH_SPACING
       const angle = armAngle + spiralOffset
 
-      // Much more dramatic vertical spread - full 3D distribution
+      // Much more dramatic vertical spread - full 3D distribution (5x scale)
       // Use a combination of factors to create varied heights
-      const baseVertical = 3000 + depth * 1500
+      const baseVertical = 15000 + depth * 7500
       const indexVariation = Math.sin(index * 2.7 + depth * 1.3) + Math.cos(index * 1.9)
       const depthVariation = Math.cos(depth * 0.8 + index * 0.5)
       const y = indexVariation * baseVertical * 0.5 + depthVariation * baseVertical * 0.3
 
-      const x = Math.cos(angle) * radius + (Math.sin(index * 2.1) * 0.3 - 0.15) * 800
-      const z = Math.sin(angle) * radius + (Math.cos(index * 1.7) * 0.3 - 0.15) * 800
+      const x = Math.cos(angle) * radius + (Math.sin(index * 2.1) * 0.3 - 0.15) * 4000
+      const z = Math.sin(angle) * radius + (Math.cos(index * 1.7) * 0.3 - 0.15) * 4000
 
       const totalChildren = countDescendants(child)
 

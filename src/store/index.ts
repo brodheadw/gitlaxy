@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { FolderNode, FileNode, GitCommit, RepoInfo, RepoNode, LayoutNode } from '../types'
-import { createDemoRepo, createDemoCommits, getRepoInfo } from '../utils/gitParser'
+import { createDemoRepo, createDemoCommits, getRepoInfo, createRepoFromGlob } from '../utils/gitParser'
 import { DEFAULT_CONTROLS, type ControlSettings } from '../config/controls'
 
 export type ViewMode = 'explore' | 'history'
@@ -8,6 +8,7 @@ export type CameraMode = 'orbit' | 'fly'
 export type ViewLevel = 'galaxy' | 'system' // galaxy = all systems, system = inside one folder
 export type ShipType = 'falcon' | 'viper' | 'hauler' | 'explorer' | 'custom'
 export type LandingState = 'flying' | 'approaching' | 'landed'
+export type AppState = 'menu' | 'loading' | 'ready'
 
 // Info about the nearest planet for landing
 interface NearestPlanetInfo {
@@ -78,6 +79,9 @@ interface RepoState {
   hasUnsavedChanges: boolean
   editorError: string | null
 
+  // App state (menu -> loading -> ready)
+  appState: AppState
+
   // Actions
   loadRepo: () => void
   setViewMode: (mode: ViewMode) => void
@@ -131,6 +135,9 @@ interface RepoState {
   setEditorContent: (content: string) => void
   setEditorError: (error: string | null) => void
   setHasUnsavedChanges: (dirty: boolean) => void
+
+  // App state actions
+  startApp: () => void
 }
 
 export const useStore = create<RepoState>((set, get) => ({
@@ -184,13 +191,41 @@ export const useStore = create<RepoState>((set, get) => ({
   hasUnsavedChanges: false,
   editorError: null,
 
-  // Actions
-  loadRepo: () => {
-    const repoInfo = getRepoInfo()
-    const rootNode = createDemoRepo()
-    const commits = createDemoCommits()
+  // App state
+  appState: 'menu',
 
-    set({ repoInfo, rootNode, commits })
+  // Actions
+  loadRepo: async () => {
+    try {
+      // Load REAL repository structure from /src directory
+      const response = await fetch('/api/files')
+      if (!response.ok) {
+        // Fallback: create structure from import.meta.glob
+        const modules = import.meta.glob('/src/**/*', { eager: false })
+        const rootNode = createRepoFromGlob(modules)
+        const commits = createDemoCommits() // Keep commits for now
+        const repoInfo = getRepoInfo()
+
+        set({ repoInfo, rootNode, commits })
+        return
+      }
+
+      const data = await response.json()
+      set({
+        repoInfo: data.repoInfo,
+        rootNode: data.rootNode,
+        commits: data.commits
+      })
+    } catch (error) {
+      console.error('Failed to load repo:', error)
+      // Fallback to glob-based loading
+      const modules = import.meta.glob('/src/**/*', { eager: false })
+      const rootNode = createRepoFromGlob(modules)
+      const commits = createDemoCommits()
+      const repoInfo = getRepoInfo()
+
+      set({ repoInfo, rootNode, commits })
+    }
   },
 
   setViewMode: (viewMode) => set({ viewMode }),
@@ -362,6 +397,28 @@ export const useStore = create<RepoState>((set, get) => ({
   setEditorError: (editorError) => set({ editorError }),
 
   setHasUnsavedChanges: (hasUnsavedChanges) => set({ hasUnsavedChanges }),
+
+  // App state actions
+  startApp: () => {
+    // Transition to loading
+    set({ appState: 'loading' })
+
+    // Load REAL repo data using glob
+    const modules = import.meta.glob('/src/**/*', { eager: false })
+    const rootNode = createRepoFromGlob(modules)
+    const commits = createDemoCommits()
+    const repoInfo = getRepoInfo()
+
+    // Simulate loading delay then transition to ready
+    setTimeout(() => {
+      set({
+        repoInfo,
+        rootNode,
+        commits,
+        appState: 'ready'
+      })
+    }, 2000)
+  },
 }))
 
 // Selector hooks for performance

@@ -6,15 +6,15 @@ import { DEFAULT_CONTROLS, MOUSE_SENSITIVITY_BASE, type ControlSettings } from '
 import { PERFORMANCE } from '../config/performance'
 import { useFrameThrottle } from '../hooks/useFrameThrottle'
 
-// NMS-style flight configuration factory
+// NMS-style flight configuration factory (5x scale for immersive universe)
 const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS, shipType: ShipType = 'falcon') => {
   const maxSpeed = PERFORMANCE.ship.maxSpeed[shipType]
   return {
-    // Speed settings (units per second)
-    minSpeed: -300,
-    normalSpeed: 200,
-    maxSpeed,
-    boostSpeed: maxSpeed,
+    // Speed settings (units per second) - 5x for larger universe
+    minSpeed: -1500,
+    normalSpeed: 1000,
+    maxSpeed: maxSpeed * 5,
+    boostSpeed: maxSpeed * 5,
 
   // Acceleration/deceleration - uses control preset values
   acceleration: controls.acceleration,
@@ -25,6 +25,11 @@ const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS, shipTy
   basePitchRate: controls.turnRate,
   baseYawRate: controls.turnRate * 0.8,
   rollRate: controls.rollRate,
+
+  // Strafe speeds - 6-axis control
+  strafeSpeed: maxSpeed * 0.6, // 60% of max forward speed
+  strafeAcceleration: controls.acceleration * 0.8,
+  strafeDeceleration: controls.deceleration * 1.2, // Faster stop
 
   // Auto-banking - uses control preset values
   autoBankStrength: controls.autoBankStrength,
@@ -48,20 +53,44 @@ interface ShipControlsProps {
 
 // Key bindings for flight controls
 const FLIGHT_KEYS = new Set([
-  'KeyW', 'KeyA', 'KeyS', 'KeyD',
+  'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyZ', 'KeyC',
   'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-  'ShiftLeft', 'ShiftRight', 'KeyE', 'Space'
+  'ShiftLeft', 'ShiftRight', 'Space'
 ])
 
 export default function ShipControls({ controlSettings }: ShipControlsProps) {
   const { camera, gl } = useThree()
-  const { cameraMode, setCameraMode, keysPressed, setKeyPressed, updateFlightState, showSettings, selectedShip } = useStore()
+  const {
+    cameraMode,
+    setCameraMode,
+    keysPressed,
+    setKeyPressed,
+    updateFlightState,
+    showSettings,
+    selectedShip,
+    landingState,
+    nearestPlanet,
+    initiateLanding,
+  } = useStore()
 
   // Create flight config from control settings and ship type - recalculate when settings change
   const cfg = useMemo(() => createFlightConfig(controlSettings, selectedShip), [controlSettings, selectedShip])
 
   // Get physics curves (use defaults if not provided)
   const physics = useMemo(() => controlSettings?.physicsCurves || DEFAULT_CONTROLS.physicsCurves, [controlSettings])
+
+  // Use refs for landing state to avoid effect re-runs releasing pointer lock
+  const landingStateRef = useRef(landingState)
+  const nearestPlanetRef = useRef(nearestPlanet)
+
+  // Keep refs updated
+  useEffect(() => {
+    landingStateRef.current = landingState
+  }, [landingState])
+
+  useEffect(() => {
+    nearestPlanetRef.current = nearestPlanet
+  }, [nearestPlanet])
 
   // Flight state
   const currentSpeed = useRef(cfg.minSpeed)
@@ -78,6 +107,10 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
   const currentPitchVelocity = useRef(0)
   const currentRollVelocity = useRef(0)
   const autoBankAngle = useRef(0)
+
+  // Strafe velocity state (6-axis control)
+  const strafeVelocityX = useRef(0) // Left/Right strafe
+  const strafeVelocityY = useRef(0) // Up/Down strafe
 
   // Target rotation velocities for inertia
   const targetYawVelocity = useRef(0)
@@ -111,6 +144,8 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
       targetPitchVelocity.current = 0
       previousYawVelocity.current = 0
       autoBankAngle.current = 0
+      strafeVelocityX.current = 0
+      strafeVelocityY.current = 0
       mouseInput.current = { x: 0, y: 0 }
     }
   }, [cameraMode])
@@ -140,6 +175,17 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
         }
         // Don't automatically switch to orbit mode - stay in fly mode
         // User can manually switch camera mode via HUD if needed
+        return
+      }
+
+      // E key - initiate landing when approaching a planet (otherwise used for strafing down)
+      if (event.code === 'KeyE' && landingStateRef.current === 'approaching' && nearestPlanetRef.current) {
+        event.preventDefault()
+        // Exit pointer lock before landing
+        if (document.pointerLockElement === gl.domElement) {
+          document.exitPointerLock()
+        }
+        initiateLanding(nearestPlanetRef.current.node)
         return
       }
 
@@ -195,7 +241,16 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
     const isBraking = keysPressed.has('KeyS') || keysPressed.has('ArrowDown')
     const isRollingLeft = keysPressed.has('KeyA') || keysPressed.has('ArrowLeft')
     const isRollingRight = keysPressed.has('KeyD') || keysPressed.has('ArrowRight')
-    const wantsBoost = keysPressed.has('ShiftLeft') || keysPressed.has('ShiftRight') || keysPressed.has('KeyE')
+    const wantsBoost = keysPressed.has('ShiftLeft') || keysPressed.has('ShiftRight')
+
+    // Speed brake: Shift + S = rapid deceleration
+    const isSpeedBraking = wantsBoost && isBraking
+
+    // 6-axis strafe controls
+    const isStrafingUp = keysPressed.has('KeyQ')
+    const isStrafingDown = keysPressed.has('KeyE')
+    const isStrafingLeft = keysPressed.has('KeyZ')
+    const isStrafingRight = keysPressed.has('KeyC')
 
     // Update boost state
     isBoosting.current = wantsBoost && isThrusting
@@ -241,8 +296,16 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
         const speedDiff = cfg.maxSpeed - currentSpeed.current
         currentSpeed.current += Math.min(cfg.acceleration * thrustCurve * dt, speedDiff)
       }
+    } else if (isSpeedBraking) {
+      // Shift + S - SPEED BRAKE: rapid deceleration to zero (3x brake force)
+      const speedBrakeForce = cfg.brakeForce * 3
+      if (currentSpeed.current > 0) {
+        currentSpeed.current = Math.max(0, currentSpeed.current - speedBrakeForce * dt)
+      } else if (currentSpeed.current < 0) {
+        currentSpeed.current = Math.min(0, currentSpeed.current + speedBrakeForce * dt)
+      }
     } else if (isBraking) {
-      // S key - decelerate (can go into reverse)
+      // S key - normal deceleration (can go into reverse)
       currentSpeed.current -= cfg.brakeForce * dt
     } else {
       // DRIFT PHYSICS - ship retains momentum but gradually slows
@@ -367,11 +430,62 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
     // Normalize to prevent drift
     camera.quaternion.normalize()
 
+    // --- STRAFE MOVEMENT (6-AXIS CONTROL) ---
+
+    // Calculate target strafe velocities
+    let targetStrafeX = 0
+    let targetStrafeY = 0
+
+    if (isStrafingLeft) targetStrafeX = -cfg.strafeSpeed
+    if (isStrafingRight) targetStrafeX = cfg.strafeSpeed
+    if (isStrafingUp) targetStrafeY = cfg.strafeSpeed
+    if (isStrafingDown) targetStrafeY = -cfg.strafeSpeed
+
+    // Smooth strafe acceleration/deceleration
+    const strafeAccelRate = cfg.strafeAcceleration * dt
+    const strafeDecelRate = cfg.strafeDeceleration * dt
+
+    if (Math.abs(targetStrafeX) > 0) {
+      // Accelerating to target strafe speed
+      const diff = targetStrafeX - strafeVelocityX.current
+      strafeVelocityX.current += Math.sign(diff) * Math.min(Math.abs(diff), strafeAccelRate)
+    } else {
+      // Decelerating to zero
+      if (Math.abs(strafeVelocityX.current) < strafeDecelRate) {
+        strafeVelocityX.current = 0
+      } else {
+        strafeVelocityX.current -= Math.sign(strafeVelocityX.current) * strafeDecelRate
+      }
+    }
+
+    if (Math.abs(targetStrafeY) > 0) {
+      // Accelerating to target strafe speed
+      const diff = targetStrafeY - strafeVelocityY.current
+      strafeVelocityY.current += Math.sign(diff) * Math.min(Math.abs(diff), strafeAccelRate)
+    } else {
+      // Decelerating to zero
+      if (Math.abs(strafeVelocityY.current) < strafeDecelRate) {
+        strafeVelocityY.current = 0
+      } else {
+        strafeVelocityY.current -= Math.sign(strafeVelocityY.current) * strafeDecelRate
+      }
+    }
+
     // --- MOVEMENT ---
 
-    // Ship always moves forward (NMS style - no strafing)
+    // Forward/backward movement
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion)
     camera.position.addScaledVector(forward, currentSpeed.current * dt)
+
+    // Lateral strafe (left/right)
+    if (Math.abs(strafeVelocityX.current) > 0.01) {
+      camera.position.addScaledVector(localRight, strafeVelocityX.current * dt)
+    }
+
+    // Vertical strafe (up/down)
+    if (Math.abs(strafeVelocityY.current) > 0.01) {
+      camera.position.addScaledVector(localUp, strafeVelocityY.current * dt)
+    }
 
     // --- UPDATE SHARED FLIGHT STATE ---
     updateFlightState({

@@ -4,8 +4,80 @@
 
 import type { FileNode, FolderNode, RepoNode, GitCommit, RepoInfo } from '../types'
 
+// Create repository structure from Vite's import.meta.glob
+export function createRepoFromGlob(modules: Record<string, () => Promise<unknown>>): FolderNode {
+  const createFile = (name: string, path: string): FileNode => ({
+    id: path,
+    name,
+    path,
+    type: 'file',
+    extension: name.split('.').pop() || '',
+    size: 1000 + Math.floor(Math.random() * 5000), // Estimate
+    lastModified: new Date(),
+  })
+
+  const createFolder = (name: string, path: string, children: RepoNode[]): FolderNode => ({
+    id: path,
+    name,
+    path,
+    type: 'folder',
+    children,
+  })
+
+  // Build tree from file paths
+  const tree: Map<string, { folders: Set<string>, files: Set<string> }> = new Map()
+
+  for (const path of Object.keys(modules)) {
+    const normalizedPath = path.replace(/^\/src/, '')
+    const parts = normalizedPath.split('/').filter(Boolean)
+
+    // Track all directories
+    for (let i = 0; i < parts.length; i++) {
+      const dirPath = '/' + parts.slice(0, i + 1).join('/')
+      const parentPath = i === 0 ? '/' : '/' + parts.slice(0, i).join('/')
+
+      if (!tree.has(parentPath)) {
+        tree.set(parentPath, { folders: new Set(), files: new Set() })
+      }
+
+      if (i === parts.length - 1) {
+        // It's a file
+        tree.get(parentPath)!.files.add(parts[i])
+      } else {
+        // It's a folder
+        tree.get(parentPath)!.folders.add(parts[i])
+      }
+    }
+  }
+
+  // Build tree recursively
+  function buildNode(path: string): FolderNode {
+    const data = tree.get(path) || { folders: new Set(), files: new Set() }
+    const children: RepoNode[] = []
+
+    // Add folders
+    for (const folderName of Array.from(data.folders).sort()) {
+      const folderPath = path === '/' ? `/${folderName}` : `${path}/${folderName}`
+      children.push(buildNode(folderPath))
+    }
+
+    // Add files
+    for (const fileName of Array.from(data.files).sort()) {
+      const filePath = path === '/' ? `/${fileName}` : `${path}/${fileName}`
+      children.push(createFile(fileName, filePath))
+    }
+
+    const name = path === '/' ? 'src' : path.split('/').pop() || 'src'
+    return createFolder(name, path, children)
+  }
+
+  const result = buildNode('/')
+
+  return result
+}
+
 // Demo repository structure for testing
-// In production, this would be fetched from a git API
+// DEPRECATED - use createRepoFromGlob instead
 export function createDemoRepo(): FolderNode {
   const createFile = (name: string, path: string, size = 1000): FileNode => ({
     id: path,

@@ -1,4 +1,4 @@
-import { useStore } from '../store'
+import { useStore, useLandingState, useNearestPlanet } from '../store'
 import type { ShipType } from '../store'
 import { SHIP_INFO } from './Spaceship'
 import './HUD.css'
@@ -30,6 +30,9 @@ export default function HUD() {
     setShowSettings,
   } = useStore()
 
+  const landingState = useLandingState()
+  const nearestPlanet = useNearestPlanet()
+
   const currentCommit = commits[historyIndex]
 
   return (
@@ -43,11 +46,10 @@ export default function HUD() {
               ← Back to Galaxy
             </button>
           )}
-          <span className="repo-icon">🌌</span>
           <span className="repo-name">{repoInfo?.name || 'Loading...'}</span>
           {viewLevel === 'system' && currentSystem && (
             <span className="current-system">
-              → ☀️ {currentSystem.name}
+              → {currentSystem.name}
             </span>
           )}
           <span className="repo-branch">
@@ -63,13 +65,13 @@ export default function HUD() {
               className={`hud-btn ${viewMode === 'explore' ? 'active' : ''}`}
               onClick={() => setViewMode('explore')}
             >
-              🔭 Explore
+              Explore
             </button>
             <button
               className={`hud-btn ${viewMode === 'history' ? 'active' : ''}`}
               onClick={() => setViewMode('history')}
             >
-              📜 History
+              History
             </button>
           </div>
 
@@ -79,13 +81,13 @@ export default function HUD() {
               className={`hud-btn ${cameraMode === 'orbit' ? 'active' : ''}`}
               onClick={() => setCameraMode('orbit')}
             >
-              🌍 Orbit
+              Orbit
             </button>
             <button
               className={`hud-btn ${cameraMode === 'fly' ? 'active' : ''}`}
               onClick={() => setCameraMode('fly')}
             >
-              🚀 Fly
+              Fly
             </button>
           </div>
 
@@ -93,7 +95,7 @@ export default function HUD() {
             className={`settings-btn ${showSettings ? 'active' : ''}`}
             onClick={() => setShowSettings(true)}
           >
-            ⚙ Settings
+            Settings
           </button>
 
           <button
@@ -105,7 +107,7 @@ export default function HUD() {
             }}
             title="Exit Application"
           >
-            ⏻ Exit
+            Exit
           </button>
         </div>
       </div>
@@ -150,7 +152,7 @@ export default function HUD() {
             </div>
             {viewLevel === 'galaxy' && (
               <div className="help-row">
-                <span className="hint">Click a sun ☀️ to enter system</span>
+                <span className="hint">Click a sun to enter system</span>
               </div>
             )}
           </div>
@@ -162,7 +164,7 @@ export default function HUD() {
         <div className="hud-bottom-right">
           <div className="node-info">
             <div className="node-type">
-              {selectedNode.type === 'folder' ? '☀️ Solar System' : '🪐 Planet'}
+              {selectedNode.type === 'folder' ? 'Solar System' : 'Planet'}
             </div>
             <div className="node-name">{selectedNode.name}</div>
             <div className="node-path">{selectedNode.path}</div>
@@ -183,14 +185,39 @@ export default function HUD() {
 
       {/* View level indicator */}
       <div className="view-indicator">
-        <span className={viewLevel === 'galaxy' ? 'active' : ''}>🌌 Galaxy</span>
+        <span className={viewLevel === 'galaxy' ? 'active' : ''}>Galaxy</span>
         {viewLevel === 'system' && (
           <>
             <span className="separator">→</span>
-            <span className="active">☀️ {currentSystem?.name}</span>
+            <span className="active">{currentSystem?.name}</span>
           </>
         )}
       </div>
+
+      {/* Landed indicator */}
+      {landingState === 'landed' && nearestPlanet && (
+        <div className="landed-indicator">
+          <span className="landed-icon">🪐</span>
+          <span className="landed-text">Landed on</span>
+          <span className="landed-planet">{nearestPlanet.node.name}</span>
+        </div>
+      )}
+
+      {/* Landing prompt (when approaching a planet in fly mode) */}
+      {cameraMode === 'fly' && landingState === 'approaching' && nearestPlanet && (
+        <div className="landing-prompt">
+          <div className="landing-target">
+            <span className="planet-icon">🪐</span>
+            <span className="planet-name">{nearestPlanet.node.name}</span>
+          </div>
+          <div className="landing-distance">
+            {Math.round(nearestPlanet.distance)} units away
+          </div>
+          <div className="landing-action">
+            <kbd>E</kbd> Land &amp; Edit
+          </div>
+        </div>
+      )}
 
       {/* Speed indicator (when in fly mode) */}
       {cameraMode === 'fly' && (
@@ -198,7 +225,7 @@ export default function HUD() {
           <div className="speed-bar-container">
             <div
               className={`speed-bar ${flightState.isBoosting ? 'boosting' : ''} ${flightState.speed < 0 ? 'reverse' : ''}`}
-              style={{ width: `${Math.min(Math.abs(flightState.speed) / 3000 * 100, 100)}%` }}
+              style={{ width: `${Math.min(Math.abs(flightState.speed) / 15000 * 100, 100)}%` }}
             />
           </div>
           <div className="speed-value">

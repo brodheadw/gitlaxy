@@ -95,14 +95,14 @@ export default function Editor() {
               ✕ Close
             </button>
             <button className="editor-btn takeoff" onClick={handleTakeoff}>
-              🚀 Take Off
+              Take Off
             </button>
           </div>
         </div>
 
         {error && (
           <div className="editor-error">
-            ⚠️ {error}
+            {error}
           </div>
         )}
 

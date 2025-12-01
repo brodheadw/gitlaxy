@@ -226,11 +226,34 @@ export default function ProceduralPlanet({
   const cloudTexture = useMemo(
     () => config.hasClouds
       ? textureCache.getCloudTexture(
-          config.seed,
-          () => createCloudTexture(config.seed)
-        )
+        config.seed,
+        () => createCloudTexture(config.seed)
+      )
       : null,
     [config]
+  )
+
+  // Create geometries as memoized refs so we can dispose them
+  const planetGeometry = useMemo(
+    () => new THREE.SphereGeometry(size, geometryCfg.sphereDetail, geometryCfg.sphereDetail),
+    [size, geometryCfg.sphereDetail]
+  )
+
+  const cloudGeometry = useMemo(
+    () => config.hasClouds
+      ? new THREE.SphereGeometry(size * 1.02, geometryCfg.cloudDetail, geometryCfg.cloudDetail)
+      : null,
+    [size, geometryCfg.cloudDetail, config.hasClouds]
+  )
+
+  const atmosphereInnerGeometry = useMemo(
+    () => new THREE.SphereGeometry(size * atmosphereCfg.innerScale, geometryCfg.cloudDetail, geometryCfg.cloudDetail),
+    [size, atmosphereCfg.innerScale, geometryCfg.cloudDetail]
+  )
+
+  const atmosphereOuterGeometry = useMemo(
+    () => new THREE.SphereGeometry(size * atmosphereCfg.outerScale, geometryCfg.cloudDetail, geometryCfg.cloudDetail),
+    [size, atmosphereCfg.outerScale, geometryCfg.cloudDetail]
   )
 
   // Ring geometry
@@ -285,10 +308,10 @@ export default function ProceduralPlanet({
     }
   })
 
-  // Cleanup: release texture references on unmount
+  // Cleanup: release ALL resources on unmount to prevent memory leaks
   useEffect(() => {
     return () => {
-      // Release references to cached textures
+      // Release cached texture references
       textureCache.releasePlanetTexture(config.planetType, config.seed)
 
       if (config.hasClouds) {
@@ -299,16 +322,19 @@ export default function ProceduralPlanet({
         textureCache.releaseRingTexture(config.seed)
       }
 
-      // Dispose of ring geometry if it exists (not cached)
+      // Dispose ALL geometries
+      planetGeometry.dispose()
+      cloudGeometry?.dispose()
+      atmosphereInnerGeometry.dispose()
+      atmosphereOuterGeometry.dispose()
       ringGeometry?.dispose()
     }
-  }, [config, ringGeometry])
+  }, [config, planetGeometry, cloudGeometry, atmosphereInnerGeometry, atmosphereOuterGeometry, ringGeometry])
 
   return (
     <group>
       {/* Planet surface */}
-      <mesh ref={planetRef}>
-        <sphereGeometry args={[size, geometryCfg.sphereDetail, geometryCfg.sphereDetail]} />
+      <mesh ref={planetRef} geometry={planetGeometry}>
         <meshStandardMaterial
           map={planetTexture}
           metalness={0.1}
@@ -317,9 +343,8 @@ export default function ProceduralPlanet({
       </mesh>
 
       {/* Cloud layer */}
-      {config.hasClouds && cloudTexture && (
-        <mesh ref={cloudsRef}>
-          <sphereGeometry args={[size * 1.02, geometryCfg.cloudDetail, geometryCfg.cloudDetail]} />
+      {config.hasClouds && cloudTexture && cloudGeometry && (
+        <mesh ref={cloudsRef} geometry={cloudGeometry}>
           <meshStandardMaterial
             map={cloudTexture}
             transparent
@@ -330,8 +355,7 @@ export default function ProceduralPlanet({
       )}
 
       {/* Atmosphere glow */}
-      <mesh>
-        <sphereGeometry args={[size * atmosphereCfg.innerScale, geometryCfg.cloudDetail, geometryCfg.cloudDetail]} />
+      <mesh geometry={atmosphereInnerGeometry}>
         <meshBasicMaterial
           color={color}
           transparent
@@ -341,8 +365,7 @@ export default function ProceduralPlanet({
       </mesh>
 
       {/* Outer atmosphere */}
-      <mesh>
-        <sphereGeometry args={[size * atmosphereCfg.outerScale, geometryCfg.cloudDetail, geometryCfg.cloudDetail]} />
+      <mesh geometry={atmosphereOuterGeometry}>
         <meshBasicMaterial
           color={color}
           transparent

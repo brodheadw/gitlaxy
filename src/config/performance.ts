@@ -142,13 +142,13 @@ export const PERFORMANCE = {
       sizeMultiplier: 40,
       minFileSize: 100,
     },
-    // Geometry detail levels
+    // Geometry detail levels (REDUCED for performance)
     geometry: {
-      sphereDetail: 64,
-      cloudDetail: 48,
-      ringDetail: 64,
-      interactionDetail: 16,
-      selectionRingDetail: 64,
+      sphereDetail: 16,
+      cloudDetail: 8,
+      ringDetail: 32,
+      interactionDetail: 8,
+      selectionRingDetail: 32,
     },
     // Animation speeds
     animation: {

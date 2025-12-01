@@ -115,7 +115,7 @@ export function usePerformanceLogger(intervalMs = 5000) {
     const now = Date.now()
     if (now - lastLog.current > intervalMs) {
       lastLog.current = now
-      console.group('🚀 Performance Stats')
+      console.group('Performance Stats')
       console.log(`FPS: ${stats.fps}`)
       console.log(`Frame Time: ${stats.frameTime}ms`)
       console.log(`Draw Calls: ${stats.drawCalls}`)

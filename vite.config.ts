@@ -7,6 +7,7 @@ import path from 'path'
 function fileApiPlugin(): Plugin {
   return {
     name: 'file-api',
+    apply: 'serve', // Only apply in dev mode (security fix)
     configureServer(server) {
       // Read file endpoint
       server.middlewares.use('/api/file/read', async (req, res) => {
