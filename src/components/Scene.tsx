@@ -10,8 +10,11 @@ import SpaceBackground from './SpaceBackground'
 import Spaceship from './Spaceship'
 import { FlyCamera } from './ShipControls'
 import { PERFORMANCE } from '../config/performance'
+<<<<<<< HEAD
+=======
 import { contextRecovery } from '../utils/contextRecovery'
 import { detectMemoryLeaks } from '../utils/disposeObject'
+>>>>>>> origin/main
 import { useProximityDetection } from '../hooks/useProximityDetection'
 
 // Component to run proximity detection
