@@ -350,8 +350,11 @@ export const useStore = create<RepoState>((set, get) => ({
     set({
       landingState: 'landed',
       landingTarget: planet,
-      cameraMode: 'orbit', // Switch to orbit mode when landed
-      isEditorOpen: true,
+      cameraMode: 'orbit', // Exit fly mode when landing
+      isEditorOpen: true, // Open the editor
+      editorContent: null, // Will be loaded by Editor component
+      hasUnsavedChanges: false,
+      editorError: null,
     })
   },
 
@@ -359,43 +362,38 @@ export const useStore = create<RepoState>((set, get) => ({
     set({
       landingState: 'flying',
       landingTarget: null,
+      nearestPlanet: null,
       isEditorOpen: false,
       editorContent: null,
       hasUnsavedChanges: false,
       editorError: null,
-      cameraMode: 'fly', // Return to fly mode
+      cameraMode: 'fly', // Return to fly mode after takeoff
     })
   },
 
   // Editor actions
-  openEditor: (content) => {
-    set({
-      isEditorOpen: true,
-      editorContent: content,
-      hasUnsavedChanges: false,
-      editorError: null,
-    })
-  },
+  openEditor: (content) => set({
+    isEditorOpen: true,
+    editorContent: content,
+    hasUnsavedChanges: false,
+    editorError: null,
+  }),
 
-  closeEditor: () => {
-    set({
-      isEditorOpen: false,
-      editorContent: null,
-      hasUnsavedChanges: false,
-      editorError: null,
-    })
-  },
+  closeEditor: () => set({
+    isEditorOpen: false,
+    editorContent: null,
+    hasUnsavedChanges: false,
+    editorError: null,
+    landingState: 'flying',
+    landingTarget: null,
+  }),
 
-  setEditorContent: (content) => {
-    const { editorContent } = get()
-    set({
-      editorContent: content,
-      hasUnsavedChanges: content !== editorContent,
-    })
-  },
+  setEditorContent: (editorContent) => set({
+    editorContent,
+    hasUnsavedChanges: true,
+  }),
 
   setEditorError: (editorError) => set({ editorError }),
-
   setHasUnsavedChanges: (hasUnsavedChanges) => set({ hasUnsavedChanges }),
 
   // App state actions
@@ -445,7 +443,7 @@ export const useLandingState = () => useStore((s) => s.landingState)
 export const useLandingTarget = () => useStore((s) => s.landingTarget)
 export const useNearestPlanet = () => useStore((s) => s.nearestPlanet)
 
-// Editor state selectors
+// Editor state selectors - use individual selectors to avoid infinite loops
 export const useIsEditorOpen = () => useStore((s) => s.isEditorOpen)
 export const useEditorContent = () => useStore((s) => s.editorContent)
 export const useEditorHasUnsavedChanges = () => useStore((s) => s.hasUnsavedChanges)

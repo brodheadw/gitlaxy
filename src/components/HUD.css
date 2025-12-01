@@ -645,13 +645,6 @@ kbd {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
-  animation: boostBlink 0.5s ease-in-out infinite;
-}
-
-@keyframes boostBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
 
 /* Landed indicator */
 .landed-indicator {

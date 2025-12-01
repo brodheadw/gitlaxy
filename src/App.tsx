@@ -3,6 +3,7 @@ import { Suspense, useEffect } from 'react'
 import Scene from './components/Scene'
 import HUD from './components/HUD'
 import SettingsMenu from './components/SettingsMenu'
+import Editor from './components/Editor'
 import FPSCounter from './components/FPSCounter'
 import MainMenu from './components/MainMenu'
 import LoadingScreen from './components/LoadingScreen'
@@ -10,8 +11,21 @@ import { useStore } from './store'
 import './index.css'
 
 function App() {
+  const cameraMode = useStore((s) => s.cameraMode)
   const showFPS = useStore((state) => state.showFPS)
   const appState = useStore((state) => state.appState)
+
+  // Add fly-mode class to body when in fly mode
+  useEffect(() => {
+    if (cameraMode === 'fly') {
+      document.body.classList.add('fly-mode')
+    } else {
+      document.body.classList.remove('fly-mode')
+    }
+    return () => {
+      document.body.classList.remove('fly-mode')
+    }
+  }, [cameraMode])
 
   // Cleanup on unmount and window close
   useEffect(() => {
@@ -62,6 +76,7 @@ function App() {
           </Canvas>
           <HUD />
           <SettingsMenu />
+          <Editor />
           {showFPS && <FPSCounter />}
         </>
       )}

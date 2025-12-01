@@ -16,34 +16,34 @@ const createFlightConfig = (controls: ControlSettings = DEFAULT_CONTROLS, shipTy
     maxSpeed: maxSpeed * 5,
     boostSpeed: maxSpeed * 5,
 
-  // Acceleration/deceleration - uses control preset values
-  acceleration: controls.acceleration,
-  deceleration: controls.deceleration,
-  brakeForce: controls.brakeForce,
+    // Acceleration/deceleration - uses control preset values
+    acceleration: controls.acceleration,
+    deceleration: controls.deceleration,
+    brakeForce: controls.brakeForce,
 
-  // Turn rates (radians per second at base speed) - uses control preset values
-  basePitchRate: controls.turnRate,
-  baseYawRate: controls.turnRate * 0.8,
-  rollRate: controls.rollRate,
+    // Turn rates (radians per second at base speed) - uses control preset values
+    basePitchRate: controls.turnRate,
+    baseYawRate: controls.turnRate * 0.8,
+    rollRate: controls.rollRate,
 
-  // Strafe speeds - 6-axis control
-  strafeSpeed: maxSpeed * 0.6, // 60% of max forward speed
-  strafeAcceleration: controls.acceleration * 0.8,
-  strafeDeceleration: controls.deceleration * 1.2, // Faster stop
+    // Strafe speeds - 6-axis control
+    strafeSpeed: maxSpeed * 0.6, // 60% of max forward speed
+    strafeAcceleration: controls.acceleration * 0.8,
+    strafeDeceleration: controls.deceleration * 1.2, // Faster stop
 
-  // Auto-banking - uses control preset values
-  autoBankStrength: controls.autoBankStrength,
-  autoBankSpeed: 3,
+    // Auto-banking - uses control preset values
+    autoBankStrength: controls.autoBankStrength,
+    autoBankSpeed: 3,
 
-  // Speed affects agility
-  agilityAtMinSpeed: 1.0,
-  agilityAtMaxSpeed: 0.3,
-  agilityAtBoost: 0.15,
+    // Speed affects agility
+    agilityAtMinSpeed: 1.0,
+    agilityAtMaxSpeed: 0.3,
+    agilityAtBoost: 0.15,
 
-  // Mouse sensitivity - user controls
-  mouseSensitivity: MOUSE_SENSITIVITY_BASE * PERFORMANCE.ship.controls.mouseSensitivity * controls.mouseSensitivity,
-  invertY: controls.invertY,
-  invertX: controls.invertX,
+    // Mouse sensitivity - user controls
+    mouseSensitivity: MOUSE_SENSITIVITY_BASE * PERFORMANCE.ship.controls.mouseSensitivity * controls.mouseSensitivity,
+    invertY: controls.invertY,
+    invertX: controls.invertX,
   }
 }
 
@@ -202,30 +202,21 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
       }
     }
 
-    const onPointerLockChange = () => {
-      if (document.pointerLockElement !== gl.domElement) {
-        document.body.style.cursor = 'default'
-      }
-    }
-
     document.addEventListener('mousemove', onMouseMove)
     document.addEventListener('keydown', onKeyDown)
     document.addEventListener('keyup', onKeyUp)
-    document.addEventListener('pointerlockchange', onPointerLockChange)
     gl.domElement.addEventListener('click', onClick)
 
     return () => {
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('keydown', onKeyDown)
       document.removeEventListener('keyup', onKeyUp)
-      document.removeEventListener('pointerlockchange', onPointerLockChange)
       gl.domElement.removeEventListener('click', onClick)
       if (document.pointerLockElement === gl.domElement) {
         document.exitPointerLock()
       }
-      document.body.style.cursor = 'default'
     }
-  }, [camera, gl.domElement, cameraMode, setCameraMode, setKeyPressed, showSettings])
+  }, [camera, gl.domElement, cameraMode, setCameraMode, setKeyPressed, showSettings, initiateLanding])
 
   useFrame((_, delta) => {
     if (cameraMode !== 'fly') return
