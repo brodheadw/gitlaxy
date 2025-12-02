@@ -152,7 +152,7 @@ export const PERFORMANCE = {
     },
     // Animation speeds
     animation: {
-      orbitUpdate: 1,
+      orbitUpdate: 60, // Increased from 1 to make planets move smoothly instead of glitching
       wobbleFactor: 0.05,
       wobbleSpeed: 0.5,
       rotationSpeed: 0.005,
@@ -171,7 +171,7 @@ export const PERFORMANCE = {
     },
     // Orbit calculation (5x scale)
     orbit: {
-      radiusBase: 12.5,
+      radiusBase: 50, // Increased from 12.5 to move planets much farther from suns
       radiusSpacing: 500,
       speedBase: 0.02,
       angleSpacing: 0.3,
@@ -199,7 +199,7 @@ export const PERFORMANCE = {
   orbitRings: {
     thickness: 5.0,
     detail: 128,
-    opacity: 0.08,
+    opacity: 0.02, // Reduced from 0.08 to make orbit lines less prominent
   },
 
   // Ship controls

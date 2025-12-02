@@ -15,11 +15,11 @@ canvas {
   display: block;
 }
 
-/* Force hide cursor during fly mode */
-body.fly-mode,
-body.fly-mode *,
-body.fly-mode *::before,
-body.fly-mode *::after {
+/* Force hide cursor during fly mode ONLY when pointer is locked */
+body.fly-mode.pointer-locked,
+body.fly-mode.pointer-locked *,
+body.fly-mode.pointer-locked *::before,
+body.fly-mode.pointer-locked *::after {
   cursor: none !important;
 }
 
@@ -27,9 +27,9 @@ body.fly-mode canvas {
   pointer-events: auto !important;
 }
 
-/* Disable all HUD interactions during fly mode so cursor can't appear */
-body.fly-mode .hud,
-body.fly-mode .hud * {
+/* Disable all HUD interactions during fly mode when pointer is locked */
+body.fly-mode.pointer-locked .hud,
+body.fly-mode.pointer-locked .hud * {
   pointer-events: none !important;
   cursor: none !important;
 }

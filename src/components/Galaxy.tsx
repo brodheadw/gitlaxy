@@ -148,7 +148,8 @@ export default function Galaxy() {
     }> = []
 
     for (const sys of systems) {
-      if (sys.parentPath) {
+      // Skip connections to the root to avoid spider-web pattern from center
+      if (sys.parentPath && sys.parentPath !== '/') {
         const parentPos = positionMap.get(sys.parentPath)
         if (parentPos) {
           lines.push({

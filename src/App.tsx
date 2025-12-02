@@ -27,6 +27,28 @@ function App() {
     }
   }, [cameraMode])
 
+  // Track pointer lock state to show/hide cursor appropriately
+  useEffect(() => {
+    const handlePointerLockChange = () => {
+      if (document.pointerLockElement) {
+        document.body.classList.add('pointer-locked')
+      } else {
+        document.body.classList.remove('pointer-locked')
+      }
+    }
+
+    document.addEventListener('pointerlockchange', handlePointerLockChange)
+    document.addEventListener('mozpointerlockchange', handlePointerLockChange)
+    document.addEventListener('webkitpointerlockchange', handlePointerLockChange)
+
+    return () => {
+      document.removeEventListener('pointerlockchange', handlePointerLockChange)
+      document.removeEventListener('mozpointerlockchange', handlePointerLockChange)
+      document.removeEventListener('webkitpointerlockchange', handlePointerLockChange)
+      document.body.classList.remove('pointer-locked')
+    }
+  }, [])
+
   // Cleanup on unmount and window close
   useEffect(() => {
     const cleanup = () => {
