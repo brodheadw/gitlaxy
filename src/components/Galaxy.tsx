@@ -170,7 +170,16 @@ export default function Galaxy() {
         <Leyline key={`leyline-${i}`} {...line} />
       ))}
 
-      {/* Render each folder as a solar system with its file planets */}
+      {/* Root folder at center */}
+      <SolarSystem
+        key={rootNode.path}
+        folder={rootNode}
+        position={[0, 0, 0]}
+        depth={0}
+        totalChildren={countDescendants(rootNode)}
+      />
+
+      {/* Render each child folder as a solar system with its file planets */}
       {systems.map(({ folder, position, depth, totalChildren }) => (
         <SolarSystem
           key={folder.path}
