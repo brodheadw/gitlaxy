@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { FolderNode, FileNode, GitCommit, RepoInfo, RepoNode, LayoutNode } from '../types'
-import { createDemoRepo, createDemoCommits, getRepoInfo, createRepoFromGlob } from '../utils/gitParser'
+import { createDemoCommits, getRepoInfo, createRepoFromGlob } from '../utils/gitParser'
+import { readDirectoryAsTree, getRepoInfoFromHandle } from '../utils/fileSystemAccess'
 import { DEFAULT_CONTROLS, type ControlSettings } from '../config/controls'
 
 export type ViewMode = 'explore' | 'history'
@@ -138,6 +139,7 @@ interface RepoState {
 
   // App state actions
   startApp: () => void
+  startAppWithFolder: (dirHandle: FileSystemDirectoryHandle) => Promise<void>
 }
 
 export const useStore = create<RepoState>((set, get) => ({
@@ -416,6 +418,29 @@ export const useStore = create<RepoState>((set, get) => ({
         appState: 'ready'
       })
     }, 2000)
+  },
+
+  startAppWithFolder: async (dirHandle: FileSystemDirectoryHandle) => {
+    // Transition to loading
+    set({ appState: 'loading' })
+
+    try {
+      // Read the directory tree
+      const rootNode = await readDirectoryAsTree(dirHandle)
+      const repoInfo = getRepoInfoFromHandle(dirHandle)
+      const commits = createDemoCommits() // Keep demo commits for now
+
+      set({
+        repoInfo,
+        rootNode,
+        commits,
+        appState: 'ready'
+      })
+    } catch (error) {
+      console.error('Failed to read directory:', error)
+      // Fall back to demo mode
+      set({ appState: 'menu' })
+    }
   },
 }))
 

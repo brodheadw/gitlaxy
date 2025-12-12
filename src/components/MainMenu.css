@@ -658,6 +658,114 @@
     background: #4ecdc4;
 }
 
+/* --- Open Folder Button --- */
+.open-folder-btn {
+    position: relative;
+    background: transparent;
+    border: 2px solid #4ecdc4;
+    padding: 1.5rem 3rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #4ecdc4;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    clip-path: polygon(15px 0,
+            100% 0,
+            100% calc(100% - 15px),
+            calc(100% - 15px) 100%,
+            0 100%,
+            0 15px);
+}
+
+.open-folder-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(78, 205, 196, 0.1);
+    z-index: -1;
+    transition: all 0.3s ease;
+}
+
+.open-folder-btn:hover:not(:disabled) {
+    color: #0b0b1a;
+    text-shadow: none;
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(78, 205, 196, 0.5);
+}
+
+.open-folder-btn:hover:not(:disabled)::before {
+    background: #4ecdc4;
+}
+
+.open-folder-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.folder-hint {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 1rem;
+}
+
+/* --- Selected Folder Display --- */
+.selected-folder {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(78, 205, 196, 0.1);
+    border: 1px solid rgba(78, 205, 196, 0.3);
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.folder-icon {
+    font-size: 1.5rem;
+}
+
+.folder-name {
+    flex: 1;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    color: #4ecdc4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.change-folder-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 0.5rem 1rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.change-folder-btn:hover:not(:disabled) {
+    border-color: #4ecdc4;
+    color: #4ecdc4;
+}
+
+.change-folder-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* --- Footer --- */
 .footer {
     position: absolute;
