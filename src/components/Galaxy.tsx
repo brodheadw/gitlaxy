@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useStore } from '../store'
 import type { FolderNode } from '../types'
 import SolarSystem, { countDescendants } from './SolarSystem'
@@ -115,12 +115,7 @@ function Leyline({ start, end, parentDepth }: {
 }
 
 export default function Galaxy() {
-  const { rootNode, loadRepo } = useStore()
-
-  // Load repo on mount
-  useEffect(() => {
-    loadRepo()
-  }, [loadRepo])
+  const rootNode = useStore((s) => s.rootNode)
 
   // Calculate all solar system positions
   const systems = useMemo(() => {
