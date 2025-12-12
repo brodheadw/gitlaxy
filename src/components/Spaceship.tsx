@@ -393,7 +393,8 @@ function CustomShip() {
 }
 
 function CustomShipModel() {
-  const { scene } = useGLTF('/spaceship-optimized.glb', undefined, undefined, (loader) => {
+  const modelPath = `${import.meta.env.BASE_URL}spaceship-optimized.glb`
+  const { scene } = useGLTF(modelPath, undefined, undefined, (loader) => {
     // Configure the GLTFLoader to use our DRACO loader if available
     try {
       const dracoLoader = getDracoLoader()

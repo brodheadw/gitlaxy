@@ -45,7 +45,7 @@ export async function initializeDracoLoader(): Promise<DRACOLoader> {
       // Try to use the Blob URI pattern for VSCode compatibility
       try {
         // Fetch the decoder files
-        const decoderPath = '/draco/'
+        const decoderPath = `${import.meta.env.BASE_URL}draco/`
         const wasmLoaderFile = `${decoderPath}draco_wasm_wrapper.js`
 
         // Check if we're in a VSCode webview context
@@ -92,7 +92,7 @@ export async function initializeDracoLoader(): Promise<DRACOLoader> {
         console.warn('[DracoLoader] Blob URI initialization failed, falling back to standard:', error)
 
         // Fallback to standard initialization
-        loader.setDecoderPath('/draco/')
+        loader.setDecoderPath(`${import.meta.env.BASE_URL}draco/`)
         loader.setDecoderConfig({ type: 'wasm' })
         loader.preload()
 
