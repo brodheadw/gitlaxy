@@ -17,6 +17,79 @@ export function isFileSystemAccessSupported(): boolean {
   return 'showDirectoryPicker' in window
 }
 
+// Build folder tree from input files (for Safari/Firefox fallback)
+export function buildTreeFromFileList(files: FileList): FolderNode {
+  const root: FolderNode = {
+    id: '/',
+    name: files[0]?.webkitRelativePath.split('/')[0] || 'project',
+    path: '/',
+    type: 'folder',
+    children: [],
+  }
+
+  const folderMap = new Map<string, FolderNode>()
+  folderMap.set('/', root)
+
+  // Helper to ensure parent folders exist
+  function ensureFolder(pathParts: string[], depth: number): FolderNode {
+    if (depth === 0) return root
+
+    const folderPath = '/' + pathParts.slice(0, depth).join('/')
+    if (folderMap.has(folderPath)) {
+      return folderMap.get(folderPath)!
+    }
+
+    const parent = ensureFolder(pathParts, depth - 1)
+    const folder: FolderNode = {
+      id: folderPath,
+      name: pathParts[depth - 1],
+      path: folderPath,
+      type: 'folder',
+      children: [],
+    }
+    parent.children.push(folder)
+    folderMap.set(folderPath, folder)
+    return folder
+  }
+
+  // Process each file
+  for (const file of Array.from(files)) {
+    const relativePath = file.webkitRelativePath
+    const parts = relativePath.split('/')
+
+    // Skip hidden files and common large directories
+    if (parts.some(p => p.startsWith('.') || ['node_modules', 'dist', 'build', '.next', '__pycache__', '.cache'].includes(p))) {
+      continue
+    }
+
+    const fileName = parts[parts.length - 1]
+    const parentFolder = ensureFolder(parts, parts.length - 1)
+
+    const fileNode: FileNode = {
+      id: '/' + relativePath,
+      name: fileName,
+      path: '/' + relativePath,
+      type: 'file',
+      extension: fileName.split('.').pop() || '',
+      size: file.size,
+      lastModified: new Date(file.lastModified),
+    }
+    parentFolder.children.push(fileNode)
+  }
+
+  // Sort all folders: folders first, then files, alphabetically
+  function sortChildren(folder: FolderNode) {
+    folder.children.sort((a, b) => {
+      if (a.type !== b.type) return a.type === 'folder' ? -1 : 1
+      return a.name.localeCompare(b.name)
+    })
+    folder.children.filter((c): c is FolderNode => c.type === 'folder').forEach(sortChildren)
+  }
+  sortChildren(root)
+
+  return root
+}
+
 // Open directory picker and return the handle
 export async function pickDirectory(): Promise<FileSystemDirectoryHandle | null> {
   if (!isFileSystemAccessSupported()) {

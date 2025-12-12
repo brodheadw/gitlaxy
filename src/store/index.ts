@@ -144,6 +144,7 @@ interface RepoState {
   // App state actions
   startApp: () => void
   startAppWithFolder: (dirHandle: FileSystemDirectoryHandle) => Promise<void>
+  startAppWithTree: (tree: FolderNode) => void
 }
 
 export const useStore = create<RepoState>((set, get) => ({
@@ -449,6 +450,28 @@ export const useStore = create<RepoState>((set, get) => ({
       // Fall back to demo mode
       set({ appState: 'menu' })
     }
+  },
+
+  startAppWithTree: (tree: FolderNode) => {
+    // Transition to loading
+    set({ appState: 'loading' })
+
+    const repoInfo = {
+      name: tree.name,
+      path: tree.path,
+      branch: 'main',
+    }
+    const commits = createDemoCommits()
+
+    // Small delay for loading screen effect
+    setTimeout(() => {
+      set({
+        repoInfo,
+        rootNode: tree,
+        commits,
+        appState: 'ready'
+      })
+    }, 500)
   },
 }))
 
