@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect } from 'react'
 import { renderCorePlasma } from './supernova/phases/phase01_core_plasma'
 import { renderShockWaves } from './supernova/phases/phase02_shock_waves'
 import { renderElementEmission } from './supernova/phases/phase03_element_emission'

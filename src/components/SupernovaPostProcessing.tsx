@@ -1,8 +1,12 @@
 import { useRef, useMemo } from 'react'
 import { useFrame, extend, useThree } from '@react-three/fiber'
+// @ts-expect-error - three.js postprocessing modules lack type declarations
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
+// @ts-expect-error - three.js postprocessing modules lack type declarations
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
+// @ts-expect-error - three.js postprocessing modules lack type declarations
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
+// @ts-expect-error - three.js postprocessing modules lack type declarations
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import * as THREE from 'three'
 import postProcessingFragmentShader from '../shaders/postProcessing.frag.glsl?raw'

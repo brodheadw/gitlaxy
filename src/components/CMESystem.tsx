@@ -93,7 +93,7 @@ export default function CMESystem({ starPosition, starRadius, active, onComplete
         }, 5000)
     }, [active, starPosition, starRadius, onComplete])
 
-    useFrame((state, delta) => {
+    useFrame((_state, delta) => {
         if (!active || particlesDataRef.current.length === 0) return
 
         const particles = particlesDataRef.current

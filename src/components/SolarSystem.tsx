@@ -206,7 +206,7 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
   }, [file.id])
 
   // Pre-calculate orbit path points
-  const orbitPath = useMemo(() => {
+  const _orbitPath = useMemo(() => {
     const points = 120 // One point per 3 degrees
     const path = new Float32Array(points * 3)
 

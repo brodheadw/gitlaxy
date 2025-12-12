@@ -26,7 +26,7 @@ export default function WarpEffect({ active }: WarpEffectProps) {
         return temp
     }, [])
 
-    useFrame((state) => {
+    useFrame(() => {
         if (!mesh.current) return
 
         // If not active, hide everything or fade out
@@ -37,7 +37,7 @@ export default function WarpEffect({ active }: WarpEffectProps) {
         mesh.current.visible = true
 
         particles.forEach((particle, i) => {
-            let { t, factor, speed, x, y, z } = particle
+            let { speed, x, y, z } = particle
 
             // Move particles towards camera (assuming camera looks down -Z or similar)
             // Actually, for a warp effect, we usually want them streaming PAST the camera.

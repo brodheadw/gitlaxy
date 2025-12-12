@@ -74,10 +74,13 @@ export default function PlasmaProminence({ starPosition, starRadius, color }: Pr
         })
     }, [])
 
+    // Create the Line object
+    const lineObject = useMemo(() => {
+        return new THREE.Line(geometry, material)
+    }, [geometry, material])
+
     // Animate prominence (pulsate, flow)
     useFrame((state) => {
-        if (!lineRef.current) return
-
         const time = state.clock.elapsedTime
 
         // Pulsate opacity
@@ -85,5 +88,5 @@ export default function PlasmaProminence({ starPosition, starRadius, color }: Pr
         material.opacity = pulsate
     })
 
-    return <line ref={lineRef} geometry={geometry} material={material} />
+    return <primitive ref={lineRef} object={lineObject} />
 }

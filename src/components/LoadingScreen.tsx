@@ -1,17 +1,5 @@
-import { useEffect } from 'react'
-import { useStore } from '../store'
-
 export default function LoadingScreen() {
-    const setReady = useStore((state) => state.setReady)
-
-    // Simulate loading process (in a real app, this would track asset loading)
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setReady()
-        }, 2000) // Fake 2s load time for effect
-
-        return () => clearTimeout(timer)
-    }, [setReady])
+    // Loading state is managed by the store's startApp/startAppWithFolder functions
 
     return (
         <div

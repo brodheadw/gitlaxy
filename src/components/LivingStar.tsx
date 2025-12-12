@@ -15,7 +15,7 @@ export default function LivingStar({ size = 1200, position = [0, 0, -3000] }: {
     position?: [number, number, number]
 }) {
     const starRef = useRef<THREE.Mesh>(null)
-    const coronaRef = useRef<THREE.Mesh>(null)
+    const _coronaRef = useRef<THREE.Mesh>(null)
     const lightRef = useRef<THREE.PointLight>(null)
 
     const [flareIntensity, setFlareIntensity] = useState(1.0)

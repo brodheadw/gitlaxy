@@ -104,4 +104,5 @@ function fileApiPlugin(): Plugin {
 export default defineConfig({
   plugins: [react(), fileApiPlugin()],
   base: '/gitlaxy/',
+  assetsInclude: ['**/*.glsl'],
 })

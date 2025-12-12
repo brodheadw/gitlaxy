@@ -68,6 +68,8 @@ interface RepoState {
   showSettings: boolean
   controlSettings: ControlSettings
   showFPS: boolean
+  renderDistanceMiles: number
+  nebulaRenderDistanceMiles: number
 
   // Landing state
   landingState: LandingState
@@ -122,6 +124,8 @@ interface RepoState {
   setShowSettings: (show: boolean) => void
   setControlSettings: (settings: ControlSettings) => void
   setShowFPS: (show: boolean) => void
+  setRenderDistanceMiles: (distance: number) => void
+  setNebulaRenderDistanceMiles: (distance: number) => void
 
   // Landing actions
   setLandingState: (state: LandingState) => void
@@ -181,6 +185,8 @@ export const useStore = create<RepoState>((set, get) => ({
   showSettings: false,
   controlSettings: DEFAULT_CONTROLS,
   showFPS: false,
+  renderDistanceMiles: 200,
+  nebulaRenderDistanceMiles: 300,
 
   // Landing state
   landingState: 'flying',
@@ -342,6 +348,8 @@ export const useStore = create<RepoState>((set, get) => ({
   setShowSettings: (showSettings) => set({ showSettings }),
   setControlSettings: (controlSettings) => set({ controlSettings }),
   setShowFPS: (showFPS) => set({ showFPS }),
+  setRenderDistanceMiles: (renderDistanceMiles) => set({ renderDistanceMiles }),
+  setNebulaRenderDistanceMiles: (nebulaRenderDistanceMiles) => set({ nebulaRenderDistanceMiles }),
 
   // Landing actions
   setLandingState: (landingState) => set({ landingState }),
