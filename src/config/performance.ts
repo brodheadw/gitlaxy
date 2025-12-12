@@ -152,7 +152,7 @@ export const PERFORMANCE = {
     },
     // Animation speeds
     animation: {
-      orbitUpdate: 60, // Increased from 1 to make planets move smoothly instead of glitching
+      orbitUpdate: 1,
       wobbleFactor: 0.05,
       wobbleSpeed: 0.5,
       rotationSpeed: 0.005,

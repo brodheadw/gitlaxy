@@ -232,13 +232,9 @@ function Planet({ file, orbitRadius, orbitSpeed, startAngle }: {
       const currentAngle = startAngle + time * orbitSpeed * PERFORMANCE.files.animation.orbitUpdate
       angleRef.current = currentAngle
 
-      // Convert angle to orbit path index
-      const normalizedAngle = ((currentAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)
-      const pathIndex = Math.floor((normalizedAngle / (Math.PI * 2)) * (orbitPath.length / 3))
-      const idx = pathIndex * 3
-
-      planetRef.current.position.x = orbitPath[idx]
-      planetRef.current.position.z = orbitPath[idx + 2]
+      // Calculate position directly from angle for smooth movement (no discrete jumps)
+      planetRef.current.position.x = Math.cos(currentAngle) * orbitRadius
+      planetRef.current.position.z = Math.sin(currentAngle) * orbitRadius
 
       // Only calculate wobble (much cheaper than full orbit)
       planetRef.current.position.y = Math.sin(currentAngle * cfg.animation.wobbleSpeed) *

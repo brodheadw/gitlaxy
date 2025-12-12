@@ -318,8 +318,12 @@ export default function ShipControls({ controlSettings }: ShipControlsProps) {
       }
     }
 
-    // Snap to zero when close (prevents endless drift)
-    if (Math.abs(currentSpeed.current) < 5 && !isThrusting && !isBraking) {
+    // Snap to zero when close (prevents endless drift and negative stuck values)
+    if (Math.abs(currentSpeed.current) < 10 && !isThrusting && !isBraking && !isSpeedBraking) {
+      currentSpeed.current = 0
+    }
+    // Also snap when braking through zero
+    if (isBraking && Math.abs(currentSpeed.current) < 50) {
       currentSpeed.current = 0
     }
 

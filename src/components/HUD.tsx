@@ -1,6 +1,7 @@
 import { useStore, useLandingState, useNearestPlanet } from '../store'
 import type { ShipType } from '../store'
 import { SHIP_INFO } from './Spaceship'
+import { PERFORMANCE } from '../config/performance'
 import './HUD.css'
 
 const SHIP_TYPES: ShipType[] = ['falcon', 'viper', 'hauler', 'explorer', 'custom']
@@ -220,21 +221,25 @@ export default function HUD() {
       )}
 
       {/* Speed indicator (when in fly mode) */}
-      {cameraMode === 'fly' && (
-        <div className="speed-indicator">
-          <div className="speed-bar-container">
-            <div
-              className={`speed-bar ${flightState.isBoosting ? 'boosting' : ''} ${flightState.speed < 0 ? 'reverse' : ''}`}
-              style={{ width: `${Math.min(Math.abs(flightState.speed) / 15000 * 100, 100)}%` }}
-            />
+      {cameraMode === 'fly' && (() => {
+        const maxShipSpeed = PERFORMANCE.ship.maxSpeed[selectedShip] * 5
+        const speedPercent = Math.min(Math.abs(flightState.speed) / maxShipSpeed * 100, 100)
+        return (
+          <div className="speed-indicator">
+            <div className="speed-bar-container">
+              <div
+                className={`speed-bar ${flightState.isBoosting ? 'boosting' : ''} ${flightState.speed < 0 ? 'reverse' : ''}`}
+                style={{ width: `${speedPercent}%` }}
+              />
+            </div>
+            <div className="speed-value">
+              <span className="speed-number">{Math.round(flightState.speed)}</span>
+              <span className="speed-unit">u/s</span>
+              {flightState.isBoosting && <span className="boost-label">BOOST</span>}
+            </div>
           </div>
-          <div className="speed-value">
-            <span className="speed-number">{Math.round(flightState.speed)}</span>
-            <span className="speed-unit">u/s</span>
-            {flightState.isBoosting && <span className="boost-label">BOOST</span>}
-          </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Ship selector (when in fly mode) */}
       {cameraMode === 'fly' && (

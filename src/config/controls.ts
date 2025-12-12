@@ -84,7 +84,7 @@ export const DEFAULT_PHYSICS_CURVES: PhysicsCurves = {
   rotationAccelTime: 0.3,
   rotationDecelTime: 0.2,
   driftRetention: 0.85,
-  frictionCoefficient: 0.1,
+  frictionCoefficient: 0.01, // Reduced from 0.1 to maintain momentum better (space has no friction)
   boostMomentumDecay: 2.5,
   bankLeadIn: 0.1,
   bankSpeedMultiplier: 1.0,
